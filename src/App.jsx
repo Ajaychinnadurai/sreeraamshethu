@@ -315,7 +315,7 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authKey, setAuthKey] = useState(0);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
-  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', sector: 'Laxmana Residency Lodge', notes: '' });
+  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', sector: 'Lakshmana Residency Lodge', notes: '' });
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
 
   const handleQuoteSubmit = (e) => {
@@ -494,7 +494,7 @@ function App() {
                   value={quoteFormData.sector}
                   onChange={(e) => setQuoteFormData({ ...quoteFormData, sector: e.target.value })}
                 >
-                  <option value="Laxmana Residency Lodge">Laxmana Residency Lodge (Rameswaram)</option>
+                  <option value="Lakshmana Residency Lodge">Lakshmana Residency Lodge (Rameswaram)</option>
                   <option value="Sethu Coastal Villa Enclave">Sethu Coastal Villa Enclave (Pamban)</option>
                   <option value="Rameswaram Tourist Lodge">Rameswaram Tourist Lodge (Rameswaram)</option>
                   <option value="Thulasi Baba Mansion">Thulasi Baba Mansion (Rameswaram)</option>

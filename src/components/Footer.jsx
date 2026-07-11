@@ -148,7 +148,7 @@ export default function Footer({ onNavigate, animSpeed, setAnimSpeed }) {
             </h4>
             <p style={{ fontSize: '13px', lineHeight: '1.7', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '15px' }}>
               12/15c Thulasi Baba Madam Street,<br />
-              Near to Laxmana Theertham,<br />
+              Near to Lakshmana Theertham,<br />
               Rameswaram - 623526, Tamil Nadu, India.
             </p>
             <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>

@@ -275,7 +275,7 @@ export default function Contact() {
                 <h5 style={{ color: 'var(--white)', fontSize: '14px', fontWeight: '700' }}>Office Address</h5>
                 <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
                   12/15c Thulasi Baba Madam Street,<br />
-                  Near to Laxmana Theertham,<br />
+                  Near to Lakshmana Theertham,<br />
                   Rameswaram - 623526, Tamil Nadu, India.
                 </p>
               </div>

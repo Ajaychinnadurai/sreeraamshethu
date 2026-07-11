@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, ArrowLeft, Filter, Phone, Download, HelpCircle, CheckCircle } from 'lucide-react';
 import { safeParseJson, asArray } from '../utils/storage';
 
@@ -22,7 +21,7 @@ export default function Projects() {
       setProjectsData(asArray(parsed, []));
     } else {
       const defaults = [
-        { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.', details: 'Laxmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
+        { id: 1, name: 'Lakshmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Lakshmana Theertham.', details: 'Lakshmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
         { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '3,200 Sq. Ft.', units: '3 BHK Dual Floor', rera: 'Panchayat Approved', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.', details: 'Situated on the coastal border of Pamban, this residential custom house build uses specialized anti-corrosive concrete reinforcement to resist salt air. The roof features traditional eco-friendly red clay tiles over a reinforced structural slab, integrating natural cooling layouts.' },
         { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Handover', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', area: '12,000 Sq. Ft.', units: '24 Guest Rooms', rera: 'Municipal Certified', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.', details: 'A completed commercial lodge project offering ready occupancy. Features include high-end ceramic flooring, central ventilation shafts, structural firefighting clearance doors, and dedicated parking allocations for tourist buses.' },
         { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Handover', category: 'House Construction', price: 'Completed Site', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '2,800 Sq. Ft.', units: '4 BHK Independent', rera: 'Approved Plan', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.', details: 'This custom house project incorporates fine interior decoration works. Finished with teak wood frame work, modular granite counter kitchen, fall ceilings with integrated LED lighting, and high-quality premium paint coat.' },
@@ -35,12 +34,15 @@ export default function Projects() {
   }, []);
 
   // Filtering Logic
-  const filteredProjects = asArray(projectsData).filter(project => {
-    const matchesStatus = filterStatus === 'All' || project.status === filterStatus || (filterStatus === 'Ready to Move-in' && project.status === 'Ready to Handover');
-    const matchesLocation = filterLocation === 'All' || project.location === filterLocation;
-    const matchesCategory = filterCategory === 'All' || project.category === filterCategory;
-    return matchesStatus && matchesLocation && matchesCategory;
-  });
+  const filteredProjects = asArray(projectsData)
+    .filter(project => {
+      const matchesStatus = filterStatus === 'All' || project.status === filterStatus || (filterStatus === 'Ready to Move-in' && project.status === 'Ready to Handover');
+      const matchesLocation = filterLocation === 'All' || project.location === filterLocation;
+      const matchesCategory = filterCategory === 'All' || project.category === filterCategory;
+      return matchesStatus && matchesLocation && matchesCategory;
+    })
+    .slice()
+    .sort((a, b) => b.id - a.id);
 
   const handleBrochureSubmit = (e) => {
     e.preventDefault();
@@ -282,15 +284,10 @@ export default function Projects() {
           gap: '30px'
         }}
       >
-        <AnimatePresence>
           {filteredProjects.length > 0 ? (
             filteredProjects.map((project) => (
-              <motion.div
+              <div
                 key={project.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
                 className="vgn-card"
                 onClick={() => setSelectedProject(project)}
                 style={{ cursor: 'pointer' }}
@@ -335,7 +332,7 @@ export default function Projects() {
                     </span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))
           ) : (
             <div style={{ gridColumn: '1 / -1', padding: '60px 0', textAlign: 'center', color: 'var(--gray-500)' }}>
@@ -344,7 +341,6 @@ export default function Projects() {
               <p style={{ fontSize: '12px' }}>Try clearing filters to explore all active builds.</p>
             </div>
           )}
-        </AnimatePresence>
       </div>
     </div>
   );

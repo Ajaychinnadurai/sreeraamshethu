@@ -28,7 +28,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
       setProjectsData(asArray(parsedProj, []));
     } else {
       const defaults = [
-        { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.' },
+        { id: 1, name: 'Lakshmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Lakshmana Theertham.' },
         { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.' },
         { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Move-in', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.' },
         { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Move-in', category: 'House Construction', price: 'Ready to Handover', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.' },
@@ -100,7 +100,10 @@ export default function Home({ onNavigate, onRequestQuote }) {
   };
 
   // Filter projects for the tabbed catalog
-  const tabFilteredProjects = asArray(projectsData).filter(p => p.status === activeTab);
+  const tabFilteredProjects = asArray(projectsData)
+    .filter(p => p.status === activeTab)
+    .slice()
+    .sort((a, b) => b.id - a.id);
 
   // Dynamic Background Slideshow
   const heroBackgrounds = asArray(projectsData).length > 0 
@@ -298,7 +301,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
                 Sree Raam Shethu Construction &amp; Interiors is directed by S.M. Sethu Pandian B.E. We provide professional civil construction and bespoke interior decoration works for properties across Rameswaram, Pamban, and surrounding areas.
               </p>
               <p style={{ color: 'var(--gray-500)', fontSize: '14px', lineHeight: '1.8', marginBottom: '30px' }}>
-                Our deep familiarity with local building specifications, sea-wind resistance parameters, and structural foundations near Laxmana Theertham guarantees that your project is durable, legally compliant, and delivered on-budget.
+                Our deep familiarity with local building specifications, sea-wind resistance parameters, and structural foundations near Lakshmana Theertham guarantees that your project is durable, legally compliant, and delivered on-budget.
               </p>
               <div style={{ display: 'flex', gap: '30px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

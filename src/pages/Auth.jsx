@@ -154,7 +154,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
                   required
                   type="text"
                   name="name"
-                  placeholder="Anand Krishnan"
+                  placeholder="Your full name"
                   className="vgn-input"
                   style={{ paddingLeft: '40px' }}
                   value={formData.name}

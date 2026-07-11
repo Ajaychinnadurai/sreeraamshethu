@@ -210,7 +210,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
 
   // Default seed databases (same as pages)
   const defaultProjects = [
-    { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.', details: 'Laxmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
+    { id: 1, name: 'Lakshmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Lakshmana Theertham.', details: 'Lakshmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
     { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '3,200 Sq. Ft.', units: '3 BHK Dual Floor', rera: 'Panchayat Approved', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.', details: 'Situated on the coastal border of Pamban, this residential custom house build uses specialized anti-corrosive concrete reinforcement to resist salt air. The roof features traditional eco-friendly red clay tiles over a reinforced structural slab, integrating natural cooling layouts.' },
     { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Handover', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', area: '12,00,0 Sq. Ft.', units: '24 Guest Rooms', rera: 'Municipal Certified', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.', details: 'A completed commercial lodge project offering ready occupancy. Features include high-end ceramic flooring, central ventilation shafts, structural firefighting clearance doors, and dedicated parking allocations for tourist buses.' },
     { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Handover', category: 'House Construction', price: 'Completed Site', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '2,800 Sq. Ft.', units: '4 BHK Independent', rera: 'Approved Plan', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.', details: 'This custom house project incorporates fine interior decoration works. Finished with teak wood frame work, modular granite counter kitchen, fall ceilings with integrated LED lighting, and high-quality premium paint coat.' },
@@ -228,7 +228,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
   const defaultMilestones = [
     { id: 1, year: 'Engineering Focus', title: 'Solid Academic Foundation', desc: 'Managed by S.M. Sethu Pandian B.E. (Civil Engineering), aligning structural calculation codes with ground reality.' },
     { id: 2, year: 'Custom Housing', title: 'Local Villa Specialists', desc: 'Established deep expertise in Rameswaram coastal weatherproofing, choosing premium red clay tiles and anti-corrosive concrete reinforcement.' },
-    { id: 3, year: 'Lodge Builds', title: 'Tourist Infrastructure', desc: 'Contracted multi-room lodge structures near Laxmana Theertham and spiritual pathways, handling licensing and zoning approvals.' },
+    { id: 3, year: 'Lodge Builds', title: 'Tourist Infrastructure', desc: 'Contracted multi-room lodge structures near Lakshmana Theertham and spiritual pathways, handling licensing and zoning approvals.' },
     { id: 4, year: 'Complete Decors', title: 'Turnkey Handover', desc: 'Offering modular kitchens, structural false ceilings, and premium carpentry finishes under one single management.' }
   ];
 
@@ -245,10 +245,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
     setClients(Array.isArray(rawClients) ? rawClients : []);
 
     // 2. Inquiries
-    const defaultInq = [
-      { id: 101, name: 'Anand Krishnan', phone: '9566615030', project: 'Sethu Coastal Villa Enclave', message: 'Requested schedule for roof slab reinforcement inspect.', date: 'Today' },
-      { id: 102, name: 'Rajesh Kumar', phone: '9845012345', project: 'Laxmana Residency Lodge', message: 'Inquiry regarding plumbing layout specs and bathroom modular fittings.', date: 'Yesterday' }
-    ];
+    const defaultInq = [];
     const savedInq = localStorage.getItem('sreeraam_inquiries');
     if (savedInq) {
       const parsedInq = JSON.parse(savedInq);
@@ -1405,7 +1402,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
                       <textarea
                         className="vgn-input"
                         style={{ height: '60px', resize: 'none', padding: '10px 12px' }}
-                        placeholder="e.g. Near to Laxmana Theertham, Rameswaram - 623526"
+                        placeholder="e.g. Near to Lakshmana Theertham, Rameswaram - 623526"
                         value={editingItem.location || ''}
                         onChange={(e) => setEditingItem({ ...editingItem, location: e.target.value })}
                       />
