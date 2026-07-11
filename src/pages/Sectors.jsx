@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Home as HomeIcon, Building, ShieldCheck, Palette, CheckCircle } from 'lucide-react';
+import { safeParseJson, asArray } from '../utils/storage';
 
 export default function Sectors() {
   const [divisions, setDivisions] = useState([]);
 
   useEffect(() => {
     const savedDivs = localStorage.getItem('sreeraam_divisions');
-    if (savedDivs) {
-      const parsed = JSON.parse(savedDivs);
-      setDivisions(Array.isArray(parsed) ? parsed : []);
+    const parsed = safeParseJson(savedDivs, null);
+    if (parsed !== null) {
+      setDivisions(asArray(parsed, []));
     } else {
       const defaults = [
         { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },
@@ -68,7 +69,7 @@ export default function Sectors() {
 
       {/* Grid */}
       <motion.div {...stagger} style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-        {divisions.map((div, idx) => (
+        {asArray(divisions).map((div, idx) => (
           <motion.div
             key={idx}
             {...fadeUpChild}
@@ -134,7 +135,7 @@ export default function Sectors() {
               <h4 style={{ color: 'var(--vgn-blue-dark)', fontSize: '13px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
                 Core Competencies
               </h4>
-              {div.services.map((service, sIdx) => (
+              {(div.services || []).map((service, sIdx) => (
                 <div key={sIdx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <CheckCircle size={14} style={{ color: 'var(--vgn-gold)', flexShrink: 0 }} />
                   <span style={{ fontSize: '13px', color: 'var(--gray-800)', fontWeight: '600' }}>

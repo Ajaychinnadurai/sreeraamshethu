@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, CheckCircle, Clock } from 'lucide-react';
+import { safeParseJson, asArray } from '../utils/storage';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', project: 'General Inquiry', message: '' });
@@ -11,8 +12,8 @@ export default function Contact() {
     if (!formData.name || !formData.phone || !formData.message) return;
 
     // Save to inquiries
-    const rawInq = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
-    const inquiries = Array.isArray(rawInq) ? rawInq : [];
+    const rawInq = safeParseJson(localStorage.getItem('sreeraam_inquiries'), []);
+    const inquiries = asArray(rawInq, []);
     inquiries.push({
       id: Date.now(),
       name: formData.name,
@@ -24,8 +25,8 @@ export default function Contact() {
     localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
 
     // Save persistent admin notification
-    const rawNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
-    const adminNotifs = Array.isArray(rawNotifs) ? rawNotifs : [];
+    const rawNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
+    const adminNotifs = asArray(rawNotifs, []);
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'mail',

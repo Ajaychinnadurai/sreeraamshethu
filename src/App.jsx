@@ -5,6 +5,7 @@ import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
+import { safeParseJson, asArray } from './utils/storage';
 
 // Pages
 import Home from './pages/Home';
@@ -92,8 +93,8 @@ function App() {
 
     if (currentUser.role === 'admin') {
       const loadAllMessages = () => {
-        const raw = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
-        setAllMessages(Array.isArray(raw) ? raw : []);
+        const raw = safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []);
+        setAllMessages(asArray(raw, []));
       };
       loadAllMessages();
       const interval = setInterval(loadAllMessages, 3000);
@@ -115,8 +116,8 @@ function App() {
       };
 
       const loadMessages = () => {
-        const raw = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
-        const all = Array.isArray(raw) ? raw : [];
+        const raw = safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []);
+        const all = asArray(raw, []);
         const mine = all.filter(m => m.clientEmail === currentUser.email);
         setClientMessages(mine);
       };
@@ -134,7 +135,7 @@ function App() {
   const markClientAllRead = () => {
     if (!currentUser) return;
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
-    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.map(n => ({ ...n, read: true }));
     localStorage.setItem(key, JSON.stringify(updated));
     setClientNotifications(updated);
@@ -143,7 +144,7 @@ function App() {
   const markClientAsRead = (id) => {
     if (!currentUser) return;
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
-    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.map(n => n.id === id ? { ...n, read: true } : n);
     localStorage.setItem(key, JSON.stringify(updated));
     setClientNotifications(updated);
@@ -152,7 +153,7 @@ function App() {
   const dismissClientNotification = (id) => {
     if (!currentUser) return;
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
-    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.filter(n => n.id !== id);
     localStorage.setItem(key, JSON.stringify(updated));
     setClientNotifications(updated);
@@ -169,13 +170,13 @@ function App() {
       text: clientNewMsg.trim(),
       time: 'Just now'
     };
-    const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(msg);
     localStorage.setItem('sreeraam_chat_messages', JSON.stringify(all));
     setClientMessages(prev => [...prev, msg]);
 
     // Save persistent admin notification
-    const adminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'message',
@@ -192,7 +193,7 @@ function App() {
 
      // Simulate auto-reply
     setTimeout(() => {
-      const current = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+      const current = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
       const hasAutoReplied = current.some(m => m.clientEmail === currentUser.email && m.text.includes('S.M. Sethu Pandian B.E. will review your note'));
       if (!hasAutoReplied) {
         const reply = {
@@ -209,7 +210,7 @@ function App() {
 
         // Save client notification locally
         const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
-        const clientNotifs = JSON.parse(localStorage.getItem(key) || '[]');
+        const clientNotifs = asArray(safeParseJson(localStorage.getItem(key), []), []);
         clientNotifs.unshift({
           id: Date.now() + Math.random(),
           iconName: 'bell',
@@ -250,7 +251,7 @@ function App() {
   useEffect(() => {
     if (isClientChatOpen && currentUser) {
       if (currentUser.role === 'client') {
-        const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+        const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
         const updated = all.map(m => (m.clientEmail === currentUser.email && m.sender === 'admin') ? { ...m, read: true } : m);
         localStorage.setItem('sreeraam_chat_messages', JSON.stringify(updated));
         setClientMessages(updated.filter(m => m.clientEmail === currentUser.email));
@@ -260,7 +261,7 @@ function App() {
 
   const handleSelectAdminThread = (email) => {
     setSelectedAdminClientEmail(email);
-    const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     const updated = all.map(m => (m.clientEmail === email && m.sender === 'client') ? { ...m, read: true } : m);
     localStorage.setItem('sreeraam_chat_messages', JSON.stringify(updated));
     setAllMessages(updated);
@@ -277,14 +278,14 @@ function App() {
       text: adminReplyText.trim(),
       time: 'Just now'
     };
-    const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(reply);
     localStorage.setItem('sreeraam_chat_messages', JSON.stringify(all));
     setAllMessages(all);
 
     // Save client notification locally so client is notified in their header bell
     const clientKey = `sreeraam_notifications_client_${selectedAdminClientEmail.toLowerCase()}`;
-    const clientNotifs = JSON.parse(localStorage.getItem(clientKey) || '[]');
+    const clientNotifs = asArray(safeParseJson(localStorage.getItem(clientKey), []), []);
     clientNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'message',
@@ -321,7 +322,7 @@ function App() {
     e.preventDefault();
     if (!quoteFormData.name || !quoteFormData.email) return;
     // Save inquiry to localStorage for admin dashboard
-    const inquiries = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
+    const inquiries = asArray(safeParseJson(localStorage.getItem('sreeraam_inquiries'), []), []);
     inquiries.push({
       id: Date.now(),
       name: quoteFormData.name,
@@ -333,7 +334,7 @@ function App() {
     localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
 
     // Save persistent admin notification
-    const adminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'mail',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
+import { safeParseJson, asArray } from '../utils/storage';
 
 export default function Careers({ currentUser, onNavigate }) {
   const [formData, setFormData] = useState({ name: '', email: '', role: '', notes: '' });
@@ -11,9 +12,9 @@ export default function Careers({ currentUser, onNavigate }) {
   useEffect(() => {
     const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
     let parsedJobs = [];
-    if (savedJobs) {
-      const raw = JSON.parse(savedJobs);
-      parsedJobs = Array.isArray(raw) ? raw : [];
+    const raw = safeParseJson(savedJobs, null);
+    if (raw !== null) {
+      parsedJobs = asArray(raw, []);
     } else {
       parsedJobs = [
         { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
@@ -34,8 +35,8 @@ export default function Careers({ currentUser, onNavigate }) {
     
     // Save application to localStorage for complete operational capability
     const savedApps = localStorage.getItem('sreeraam_job_applications');
-    const rawApps = savedApps ? JSON.parse(savedApps) : [];
-    const currentApps = Array.isArray(rawApps) ? rawApps : [];
+    const rawApps = safeParseJson(savedApps, []);
+    const currentApps = asArray(rawApps, []);
     currentApps.push({
       id: Date.now(),
       ...formData,
@@ -44,8 +45,8 @@ export default function Careers({ currentUser, onNavigate }) {
     localStorage.setItem('sreeraam_job_applications', JSON.stringify(currentApps));
 
     // Save persistent admin notification
-    const rawAdminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
-    const adminNotifs = Array.isArray(rawAdminNotifs) ? rawAdminNotifs : [];
+    const rawAdminNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
+    const adminNotifs = asArray(rawAdminNotifs, []);
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'clipboard',
@@ -87,7 +88,7 @@ export default function Careers({ currentUser, onNavigate }) {
           <h2 style={{ fontSize: '24px', color: 'var(--vgn-blue-dark)', fontWeight: '800', marginBottom: '10px' }}>
             Current Opportunities
           </h2>
-          {jobs.map((job, idx) => (
+          {asArray(jobs).map((job, idx) => (
             <div key={idx} className="vgn-card" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ width: '40px', height: '40px', background: 'var(--vgn-blue-light)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -194,7 +195,7 @@ export default function Careers({ currentUser, onNavigate }) {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
-                    {jobs.map((job) => (
+                    {asArray(jobs).map((job) => (
                       <option key={job.id || job.title} value={job.title}>
                         {job.title}
                       </option>

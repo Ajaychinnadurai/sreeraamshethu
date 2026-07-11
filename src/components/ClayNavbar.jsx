@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, Phone, User, Settings, ArrowRight, Bell, Mail, CheckCircle, FileText, Clock } from 'lucide-react';
+import { asArray } from '../utils/storage';
 
 export default function ClayNavbar({
   activePage,
@@ -321,8 +322,8 @@ export default function ClayNavbar({
                         )}
                       </div>
                       <div style={{ overflowY: 'auto', maxHeight: '300px' }}>
-                        {clientNotifications.length > 0 ? (
-                          clientNotifications.map(n => (
+                        {asArray(clientNotifications).length > 0 ? (
+                          asArray(clientNotifications).map(n => (
                             <div
                               key={n.id}
                               style={{
