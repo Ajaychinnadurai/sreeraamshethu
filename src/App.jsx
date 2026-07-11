@@ -373,7 +373,10 @@ function App() {
       case 'projects':
         return <Projects />;
       case 'careers':
-        return <Careers currentUser={currentUser} onNavigate={setActivePage} />;
+        return <Careers currentUser={currentUser} onNavigate={setActivePage} onRequestAuth={() => {
+          setAuthKey(k => k + 1);
+          setIsAuthOpen(true);
+        }} />;
       case 'contact':
         return <Contact />;
       case 'dashboard':

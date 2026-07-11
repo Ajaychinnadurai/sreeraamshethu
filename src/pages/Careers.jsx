@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
 import { safeParseJson, asArray } from '../utils/storage';
 
-export default function Careers({ currentUser, onNavigate }) {
+export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [formData, setFormData] = useState({ name: '', email: '', role: '', notes: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -109,8 +109,12 @@ export default function Careers({ currentUser, onNavigate }) {
               <button
                 onClick={() => {
                   if (!currentUser) {
-                    alert('You must log in to submit a job application. Redirecting to the Login portal...');
-                    onNavigate('auth');
+                    if (onRequestAuth) {
+                      onRequestAuth();
+                    } else {
+                      alert('You must log in to submit a job application.');
+                      onNavigate('auth');
+                    }
                     return;
                   }
                   setFormData({ ...formData, role: job.title });
@@ -151,7 +155,7 @@ export default function Careers({ currentUser, onNavigate }) {
                 <p style={{ color: 'var(--gray-500)', fontSize: '13px', lineHeight: '1.6', marginBottom: '20px' }}>
                   Please log in with a client account to submit your resume and background profile.
                 </p>
-                <button onClick={() => onNavigate('auth')} className="btn-vgn btn-vgn-blue" style={{ width: '100%' }}>
+                <button onClick={() => onRequestAuth ? onRequestAuth() : onNavigate('auth')} className="btn-vgn btn-vgn-blue" style={{ width: '100%' }}>
                   Log In / Register
                 </button>
               </motion.div>
