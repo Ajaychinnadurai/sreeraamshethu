@@ -92,8 +92,8 @@ function App() {
 
     if (currentUser.role === 'admin') {
       const loadAllMessages = () => {
-        const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
-        setAllMessages(all);
+        const raw = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+        setAllMessages(Array.isArray(raw) ? raw : []);
       };
       loadAllMessages();
       const interval = setInterval(loadAllMessages, 3000);
@@ -115,7 +115,8 @@ function App() {
       };
 
       const loadMessages = () => {
-        const all = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+        const raw = JSON.parse(localStorage.getItem('sreeraam_chat_messages') || '[]');
+        const all = Array.isArray(raw) ? raw : [];
         const mine = all.filter(m => m.clientEmail === currentUser.email);
         setClientMessages(mine);
       };
