@@ -113,11 +113,11 @@ export default function ClayNavbar({
             gap: '12px'
           }}
         >
-          {/* Logo image (use /public/images/logo.png). Inline SVG is fallback */}
+          {/* Logo image with rounded corners */}
             <img
-              src="/images/logo.png"
+              src="/images/logo.svg"
               alt="SREE RAAM SHETHU"
-              style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }}
+              style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0, borderRadius: '8px' }}
               onError={(e) => { e.currentTarget.style.display = 'none'; const el = document.getElementById('navbar-inline-logo'); if (el) el.style.display = 'block'; }}
             />
             <svg id="navbar-inline-logo" width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, display: 'none' }}>
