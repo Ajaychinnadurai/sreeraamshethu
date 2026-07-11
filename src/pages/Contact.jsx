@@ -11,7 +11,8 @@ export default function Contact() {
     if (!formData.name || !formData.phone || !formData.message) return;
 
     // Save to inquiries
-    const inquiries = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
+    const rawInq = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
+    const inquiries = Array.isArray(rawInq) ? rawInq : [];
     inquiries.push({
       id: Date.now(),
       name: formData.name,
@@ -23,7 +24,8 @@ export default function Contact() {
     localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
 
     // Save persistent admin notification
-    const adminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const rawNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const adminNotifs = Array.isArray(rawNotifs) ? rawNotifs : [];
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'mail',

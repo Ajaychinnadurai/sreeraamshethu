@@ -8,7 +8,8 @@ export default function About() {
   useEffect(() => {
     const savedMiles = localStorage.getItem('sreeraam_about_milestones');
     if (savedMiles) {
-      setMilestones(JSON.parse(savedMiles));
+      const parsed = JSON.parse(savedMiles);
+      setMilestones(Array.isArray(parsed) ? parsed : []);
     } else {
       const defaults = [
         { id: 1, year: 'Engineering Focus', title: 'Solid Academic Foundation', desc: 'Managed by S.M. Sethu Pandian B.E. (Civil Engineering), aligning structural calculation codes with ground reality.' },

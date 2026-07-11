@@ -17,7 +17,8 @@ export default function Projects() {
   useEffect(() => {
     const savedProj = localStorage.getItem('sreeraam_projects');
     if (savedProj) {
-      setProjectsData(JSON.parse(savedProj));
+      const parsed = JSON.parse(savedProj);
+      setProjectsData(Array.isArray(parsed) ? parsed : []);
     } else {
       const defaults = [
         { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.', details: 'Laxmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },

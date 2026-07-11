@@ -23,7 +23,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
     // Load projects
     const savedProj = localStorage.getItem('sreeraam_projects');
     if (savedProj) {
-      setProjectsData(JSON.parse(savedProj));
+      const parsed = JSON.parse(savedProj);
+      setProjectsData(Array.isArray(parsed) ? parsed : []);
     } else {
       const defaults = [
         { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.' },
@@ -40,7 +41,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
     // Load divisions
     const savedDivs = localStorage.getItem('sreeraam_divisions');
     if (savedDivs) {
-      setDivisionsData(JSON.parse(savedDivs));
+      const parsedDivs = JSON.parse(savedDivs);
+      setDivisionsData(Array.isArray(parsedDivs) ? parsedDivs : []);
     } else {
       const defaults = [
         { id: 1, title: 'House Construction', desc: 'Bespoke custom homes, family bungalows, and villas designed to withstand local coastal conditions.', bg: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=cover&w=500&q=80' },
@@ -62,7 +64,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
     e.preventDefault();
     if (!callbackName || !callbackPhone) return;
     // Save callback inquiry to localStorage for admin dashboard
-    const inquiries = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
+    const rawInq = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]');
+    const inquiries = Array.isArray(rawInq) ? rawInq : [];
     inquiries.push({
       id: Date.now(),
       name: callbackName,
@@ -74,7 +77,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
     localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
 
     // Save persistent admin notification
-    const adminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const rawNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const adminNotifs = Array.isArray(rawNotifs) ? rawNotifs : [];
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'mail',

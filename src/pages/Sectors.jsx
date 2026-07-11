@@ -8,7 +8,8 @@ export default function Sectors() {
   useEffect(() => {
     const savedDivs = localStorage.getItem('sreeraam_divisions');
     if (savedDivs) {
-      setDivisions(JSON.parse(savedDivs));
+      const parsed = JSON.parse(savedDivs);
+      setDivisions(Array.isArray(parsed) ? parsed : []);
     } else {
       const defaults = [
         { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },

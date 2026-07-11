@@ -12,7 +12,8 @@ export default function Careers({ currentUser, onNavigate }) {
     const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
     let parsedJobs = [];
     if (savedJobs) {
-      parsedJobs = JSON.parse(savedJobs);
+      const raw = JSON.parse(savedJobs);
+      parsedJobs = Array.isArray(raw) ? raw : [];
     } else {
       parsedJobs = [
         { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
@@ -33,7 +34,8 @@ export default function Careers({ currentUser, onNavigate }) {
     
     // Save application to localStorage for complete operational capability
     const savedApps = localStorage.getItem('sreeraam_job_applications');
-    const currentApps = savedApps ? JSON.parse(savedApps) : [];
+    const rawApps = savedApps ? JSON.parse(savedApps) : [];
+    const currentApps = Array.isArray(rawApps) ? rawApps : [];
     currentApps.push({
       id: Date.now(),
       ...formData,
@@ -42,7 +44,8 @@ export default function Careers({ currentUser, onNavigate }) {
     localStorage.setItem('sreeraam_job_applications', JSON.stringify(currentApps));
 
     // Save persistent admin notification
-    const adminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const rawAdminNotifs = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const adminNotifs = Array.isArray(rawAdminNotifs) ? rawAdminNotifs : [];
     adminNotifs.unshift({
       id: Date.now() + Math.random(),
       iconName: 'clipboard',
