@@ -113,9 +113,9 @@ export default function ClayNavbar({
             gap: '12px'
           }}
         >
-          {/* Logo image (use /public/images/logo.svg). Inline SVG is fallback */}
+          {/* Logo image (use /public/images/logo.png). Inline SVG is fallback */}
             <img
-              src="/images/logo.svg"
+              src="/images/logo.png"
               alt="SREE RAAM SHETHU"
               style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }}
               onError={(e) => { e.currentTarget.style.display = 'none'; const el = document.getElementById('navbar-inline-logo'); if (el) el.style.display = 'block'; }}
