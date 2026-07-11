@@ -113,36 +113,42 @@ export default function ClayNavbar({
             gap: '12px'
           }}
         >
-          {/* VGN SVG Logo Emblem */}
-          <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-            {/* Rounded outer box */}
-            <rect x="4" y="4" width="92" height="92" rx="18" stroke={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} strokeWidth="6" fill="none" />
+          {/* Logo image (use /public/images/logo.png). Inline SVG is fallback */}
+            <img
+              src="/images/logo.png"
+              alt="SREE RAAM SHETHU"
+              style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }}
+              onError={(e) => { e.currentTarget.style.display = 'none'; const el = document.getElementById('navbar-inline-logo'); if (el) el.style.display = 'block'; }}
+            />
+            <svg id="navbar-inline-logo" width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, display: 'none' }}>
+              {/* Rounded outer box */}
+              <rect x="4" y="4" width="92" height="92" rx="18" stroke={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} strokeWidth="6" fill="none" />
             
-            {/* Tilted bottom ring / perspective base */}
-            <path d="M 12 70 C 12 55, 88 55, 88 70 C 88 85, 12 85, 12 70 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
+              {/* Tilted bottom ring / perspective base */}
+              <path d="M 12 70 C 12 55, 88 55, 88 70 C 88 85, 12 85, 12 70 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
             
-            {/* Left Building */}
-            <path d="M 19 33 C 19 32, 20 31, 21 31 L 34 31 L 34 68 L 19 62 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
-            <circle cx="25" cy="40" r="2.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
-            <circle cx="25" cy="48" r="2.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              {/* Left Building */}
+              <path d="M 19 33 C 19 32, 20 31, 21 31 L 34 31 L 34 68 L 19 62 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
+              <circle cx="25" cy="40" r="2.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              <circle cx="25" cy="48" r="2.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
 
-            {/* Middle Building with chevron bands */}
-            <path d="M 38 27 L 54 18 L 54 62 L 38 71 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
-            {/* Chevron stripes (white overlays) */}
-            <path d="M 38 34 L 46 30 L 54 34 L 54 39 L 46 35 L 38 39 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
-            <path d="M 38 43 L 46 39 L 54 43 L 54 48 L 46 44 L 38 48 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
-            <path d="M 38 52 L 46 48 L 54 52 L 54 57 L 46 53 L 38 57 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
-            <path d="M 38 61 L 46 57 L 54 61 L 54 66 L 46 62 L 38 66 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              {/* Middle Building with chevron bands */}
+              <path d="M 38 27 L 54 18 L 54 62 L 38 71 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
+              {/* Chevron stripes (white overlays) */}
+              <path d="M 38 34 L 46 30 L 54 34 L 54 39 L 46 35 L 38 39 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              <path d="M 38 43 L 46 39 L 54 43 L 54 48 L 46 44 L 38 48 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              <path d="M 38 52 L 46 48 L 54 52 L 54 57 L 46 53 L 38 57 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              <path d="M 38 61 L 46 57 L 54 61 L 54 66 L 46 62 L 38 66 Z" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
 
-            {/* Right Building column with rounded top */}
-            <path d="M 59 17 C 59 14, 65 14, 65 17 L 65 64 L 59 66 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
-            {/* White highlight inside right column */}
-            <path d="M 62 17 L 62 60" stroke={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} strokeWidth="1.8" strokeLinecap="round" />
+              {/* Right Building column with rounded top */}
+              <path d="M 59 17 C 59 14, 65 14, 65 17 L 65 64 L 59 66 Z" fill={transparentMode ? "var(--white)" : "var(--vgn-blue-dark)"} />
+              {/* White highlight inside right column */}
+              <path d="M 62 17 L 62 60" stroke={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} strokeWidth="1.8" strokeLinecap="round" />
             
-            {/* Pin shape extending bottom left */}
-            <circle cx="15" cy="74" r="3.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
-            <path d="M 15 74 L 30 68" stroke={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} strokeWidth="2.2" />
-          </svg>
+              {/* Pin shape extending bottom left */}
+              <circle cx="15" cy="74" r="3.2" fill={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} />
+              <path d="M 15 74 L 30 68" stroke={transparentMode ? "var(--vgn-blue-dark)" : "var(--white)"} strokeWidth="2.2" />
+            </svg>
           {/* Logo Name & Subtitle */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span
