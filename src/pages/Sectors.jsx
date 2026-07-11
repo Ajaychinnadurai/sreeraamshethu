@@ -3,24 +3,43 @@ import { motion } from 'framer-motion';
 import { Home as HomeIcon, Building, ShieldCheck, Palette, CheckCircle } from 'lucide-react';
 import { safeParseJson, asArray } from '../utils/storage';
 
+const defaultDivisions = [
+  { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },
+  { id: 2, title: 'Lodge Construction', metrics: 'Commercial Guest Houses & Lodges', desc: 'Expert construction of tourist lodges and guest houses near Rameswaram temple corridors. We coordinate plan approvals, safety certifications, and room layout optimization.', services: ['Multi-room tourist lodge planning', 'Municipal building approval coordination', 'Heavy-duty load bearing civil concrete', 'Commercial plumbing & ventilation setups'] },
+  { id: 3, title: 'Commercial Civil Build', metrics: 'Office & Retail Shopping Blocks', desc: 'Constructing commercial centers, retail outlets, and multi-purpose properties. Focused on solid foundations, safety clearances, and durable building envelopes.', services: ['Reinforced concrete column arrays', 'Heavy electrical wiring conduit planning', 'Fire-safe building code compliance', 'High-density concrete floor installations'] },
+  { id: 4, title: 'Interior decoration', metrics: 'Premium Modular & Wood Styling', desc: 'Custom wooden cabinetry, modular kitchens, fall ceilings, and high-quality paint coatings to deliver completed elegant living spaces.', services: ['Premium granite modular kitchen setups', 'Teak wood main entry frame installations', 'Bespoke walk-in wardrobes & cabinetry', 'Modern gypsum board false ceilings & lights'] }
+];
+
 export default function Sectors() {
   const [divisions, setDivisions] = useState([]);
 
   useEffect(() => {
     const savedDivs = localStorage.getItem('sreeraam_divisions');
     const parsed = safeParseJson(savedDivs, null);
-    if (parsed !== null) {
-      setDivisions(asArray(parsed, []));
-    } else {
-      const defaults = [
-        { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },
-        { id: 2, title: 'Lodge Construction', metrics: 'Commercial Guest Houses & Lodges', desc: 'Expert construction of tourist lodges and guest houses near Rameswaram temple corridors. We coordinate plan approvals, safety certifications, and room layout optimization.', services: ['Multi-room tourist lodge planning', 'Municipal building approval coordination', 'Heavy-duty load bearing civil concrete', 'Commercial plumbing & ventilation setups'] },
-        { id: 3, title: 'Commercial Civil Build', metrics: 'Office & Retail Shopping Blocks', desc: 'Constructing commercial centers, retail outlets, and multi-purpose properties. Focused on solid foundations, safety clearances, and durable building envelopes.', services: ['Reinforced concrete column arrays', 'Heavy electrical wiring conduit planning', 'Fire-safe building code compliance', 'High-density concrete floor installations'] },
-        { id: 4, title: 'Interior decoration', metrics: 'Premium Modular & Wood Styling', desc: 'Custom wooden cabinetry, modular kitchens, fall ceilings, and high-quality paint coatings to deliver completed elegant living spaces.', services: ['Premium granite modular kitchen setups', 'Teak wood main entry frame installations', 'Bespoke walk-in wardrobes & cabinetry', 'Modern gypsum board false ceilings & lights'] }
-      ];
-      setDivisions(defaults);
-      localStorage.setItem('sreeraam_divisions', JSON.stringify(defaults));
+
+    if (!Array.isArray(parsed)) {
+      setDivisions(defaultDivisions);
+      localStorage.setItem('sreeraam_divisions', JSON.stringify(defaultDivisions));
+      return;
     }
+
+    const merged = defaultDivisions.map((defaultItem) => {
+      const storedItem = asArray(parsed, []).find((item) => item.id === defaultItem.id);
+      if (!storedItem) return defaultItem;
+
+      const servicesAreValid = Array.isArray(storedItem.services) && storedItem.services.length === defaultItem.services.length;
+      return {
+        ...defaultItem,
+        ...storedItem,
+        services: servicesAreValid ? storedItem.services : defaultItem.services
+      };
+    });
+
+    if (JSON.stringify(merged) !== JSON.stringify(parsed)) {
+      localStorage.setItem('sreeraam_divisions', JSON.stringify(merged));
+    }
+
+    setDivisions(merged);
   }, []);
 
   const getIcon = (title) => {
