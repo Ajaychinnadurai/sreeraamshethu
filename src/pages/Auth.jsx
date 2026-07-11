@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check } from 'lucide-react';
+import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check, Eye, EyeOff } from 'lucide-react';
 
 export default function Auth({ onLoginSuccess, inModal }) {
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(null); // { user, type: 'login' | 'register' }
@@ -203,14 +205,33 @@ export default function Auth({ onLoginSuccess, inModal }) {
             <Lock size={16} style={{ position: 'absolute', left: '12px', top: '16px', color: 'var(--gray-500)' }} />
             <input
               required
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               name="password"
               placeholder="••••••••"
               className="vgn-input"
-              style={{ paddingLeft: '40px' }}
+              style={{ paddingLeft: '40px', paddingRight: '40px' }}
               value={formData.password}
               onChange={handleInputChange}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(prev => !prev)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                cursor: 'pointer',
+                color: 'var(--gray-500)'
+              }}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
@@ -221,14 +242,33 @@ export default function Auth({ onLoginSuccess, inModal }) {
               <Lock size={16} style={{ position: 'absolute', left: '12px', top: '16px', color: 'var(--gray-500)' }} />
               <input
                 required
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 placeholder="••••••••"
                 className="vgn-input"
-                style={{ paddingLeft: '40px' }}
+                style={{ paddingLeft: '40px', paddingRight: '40px' }}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(prev => !prev)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  color: 'var(--gray-500)'
+                }}
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
         )}
