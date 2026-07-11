@@ -102,7 +102,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
         phone: formData.phone,
         password: formData.password
       };
-      
+
       users.push(newUser);
       localStorage.setItem('registeredUsers', JSON.stringify(users));
 
@@ -188,7 +188,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
               required
               type={isLogin ? "text" : "email"}
               name="email"
-              placeholder={isLogin ? "sreeraamshethu@admin or client@mail.com" : "client@mail.com"}
+              placeholder={isLogin ? "Enter your email" : "Enter your email"}
               className="vgn-input"
               style={{ paddingLeft: '40px' }}
               value={formData.email}
@@ -442,7 +442,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
           }}
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.08, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '15px 15px', pointerEvents: 'none' }} />
-          
+
           <div style={{ zIndex: 1 }}>
             <h3 style={{ color: 'var(--white)', fontSize: '24px', fontWeight: '800', marginBottom: '15px' }}>
               Sree Raam Shethu Portal
