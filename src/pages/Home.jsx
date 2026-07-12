@@ -340,18 +340,6 @@ export default function Home({ onNavigate, onRequestQuote }) {
           </motion.div>
         </div>
 
-        {/* Decorative bottom fade */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '120px',
-            background: 'linear-gradient(to top, var(--bg-light) 0%, transparent 100%)',
-            zIndex: 1
-          }}
-        />
       </section>
 
       {/* B2. STATS — Compact horizontal strip */}
@@ -1302,6 +1290,19 @@ export default function Home({ onNavigate, onRequestQuote }) {
               ? 'linear-gradient(150deg, rgba(5,5,15,0.72) 0%, rgba(26,26,46,0.85) 50%, rgba(15,15,31,0.72) 100%)'
               : 'linear-gradient(to right, rgba(26, 26, 46, 0.72) 0%, rgba(26, 26, 46, 0.35) 100%)',
             zIndex: 1
+          }}
+        />
+        {/* Seamless bottom fade overlay to blend dark video into light theme */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '180px',
+            background: `linear-gradient(to top, ${layoutVariant === 'B' ? 'var(--white)' : 'var(--bg-light)'} 0%, transparent 100%)`,
+            zIndex: 2,
+            pointerEvents: 'none'
           }}
         />
       </div>
