@@ -56,6 +56,9 @@ function getTableConfig(key) {
 function toDbRow(key, item) {
   const row = { ...item };
   
+  // Strip frontend-only temporary UI states
+  delete row.typeField;
+  
   if ('desc' in row) {
     row.description = row.desc;
     delete row.desc;
