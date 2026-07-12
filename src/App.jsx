@@ -52,6 +52,15 @@ function App() {
 
   // Seed default client credentials on initial load safely
   useEffect(() => {
+    initializeDb('sreeraam_projects', []);
+    initializeDb('sreeraam_divisions', []);
+    initializeDb('sreeraam_about_milestones', []);
+    initializeDb('sreeraam_careers_jobs', []);
+    initializeDb('sreeraam_inquiries', []);
+    initializeDb('sreeraam_job_applications', []);
+    initializeDb('sreeraam_chat_messages', []);
+    initializeDb('sreeraam_notifications_admin', []);
+
     initializeDb('registeredUsers', [{
       name: 'Kumar',
       email: 'kumar@mail.com',
@@ -59,6 +68,12 @@ function App() {
       password: 'password'
     }]);
   }, []);
+
+  useEffect(() => {
+    if (currentUser && currentUser.role === 'client') {
+      initializeDb(`sreeraam_notifications_client_${currentUser.email.toLowerCase()}`, []);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     localStorage.setItem('sreeraam_active_page', activePage);

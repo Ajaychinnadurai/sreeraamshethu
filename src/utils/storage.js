@@ -60,33 +60,41 @@ export async function syncKeyFromCloud(key, fallback = []) {
 // Safely initialize a key with fallback defaults without overwriting existing cloud data
 export async function initializeDb(key, defaults = []) {
   try {
-    // 1. Check local storage first
     const localRaw = localStorage.getItem(key);
-    if (localRaw) {
-      // Local has data. Ensure it has seeded admin or values if registeredUsers
-      if (key === 'registeredUsers') {
-        const parsed = JSON.parse(localRaw);
-        if (Array.isArray(parsed) && !parsed.some(u => u.email.toLowerCase() === 'kumar@mail.com')) {
-          parsed.push({ name: 'Kumar', email: 'kumar@mail.com', phone: '9876543210', password: 'password' });
-          saveLocalAndCloud('registeredUsers', parsed);
-        }
-      }
-      return; 
-    }
 
-    // 2. Local is empty. Check if cloud has data
+    // 1. Fetch from cloud first to see if it exists
     const res = await fetch(`${BUCKET_URL}/${key}`);
     if (res.ok) {
       const text = await res.text();
       if (text && text.trim()) {
         const parsed = JSON.parse(text);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Cloud has data! Write to local storage
-          localStorage.setItem(key, JSON.stringify(parsed));
-          window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data: parsed } }));
+        if (Array.isArray(parsed)) {
+          // Cloud has data! Write to local storage if local is different
+          if (localRaw !== JSON.stringify(parsed)) {
+            localStorage.setItem(key, JSON.stringify(parsed));
+            window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data: parsed } }));
+          }
           return;
         }
       }
+    }
+
+    // 2. Cloud has NO data (404 or empty)
+    if (localRaw) {
+      // Local has data. Replicate local data to the cloud so they are synchronized!
+      const parsed = JSON.parse(localRaw);
+      // Double check registeredUsers seeded defaults locally
+      if (key === 'registeredUsers' && Array.isArray(parsed) && !parsed.some(u => u.email.toLowerCase() === 'kumar@mail.com')) {
+        parsed.push({ name: 'Kumar', email: 'kumar@mail.com', phone: '9876543210', password: 'password' });
+      }
+      const dataToSave = Array.isArray(parsed) ? parsed : defaults;
+      await fetch(`${BUCKET_URL}/${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSave)
+      });
+      localStorage.setItem(key, JSON.stringify(dataToSave));
+      return;
     }
 
     // 3. Both local and cloud are empty. Seed defaults!
