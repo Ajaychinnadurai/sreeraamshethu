@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Mail, ClipboardCheck, ArrowUpRight, MessageCircle, Plus, Edit2, Trash2, Save, X, Info, Bell, Search, ArrowUpDown, Send } from 'lucide-react';
 import ProfileButton from '../components/ProfileButton';
+import { saveLocalAndCloud } from '../utils/storage';
 
 function EmptyState({ icon, title, subtitle }) {
   return (
@@ -239,114 +240,116 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
   ];
 
   // -------------------- LIFECYCLE --------------------
+  // -------------------- LIFECYCLE --------------------
   useEffect(() => {
-    // 1. Clients
-    const rawClients = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    setClients(Array.isArray(rawClients) ? rawClients : []);
+    const loadAllData = () => {
+      // 1. Clients
+      const rawClients = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      setClients(Array.isArray(rawClients) ? rawClients : []);
 
-    // 2. Inquiries
-    const defaultInq = [];
-    const savedInq = localStorage.getItem('sreeraam_inquiries');
-    if (savedInq) {
-      const parsedInq = JSON.parse(savedInq);
-      setInquiries(Array.isArray(parsedInq) ? parsedInq : defaultInq);
-    } else {
-      setInquiries(defaultInq);
-      localStorage.setItem('sreeraam_inquiries', JSON.stringify(defaultInq));
-    }
-
-    // 3. Projects CRUD
-    const savedProj = localStorage.getItem('sreeraam_projects');
-    if (savedProj) {
-      const parsedProj = JSON.parse(savedProj);
-      setProjects(Array.isArray(parsedProj) ? parsedProj : defaultProjects);
-    } else {
-      setProjects(defaultProjects);
-      localStorage.setItem('sreeraam_projects', JSON.stringify(defaultProjects));
-    }
-
-    // 4. Divisions CRUD
-    const savedDivs = localStorage.getItem('sreeraam_divisions');
-    if (savedDivs) {
-      const parsedDivs = JSON.parse(savedDivs);
-      setDivisions(Array.isArray(parsedDivs) ? parsedDivs : defaultDivisions);
-    } else {
-      setDivisions(defaultDivisions);
-      localStorage.setItem('sreeraam_divisions', JSON.stringify(defaultDivisions));
-    }
-
-    // 5. About Milestones CRUD
-    const savedMiles = localStorage.getItem('sreeraam_about_milestones');
-    if (savedMiles) {
-      const parsedMiles = JSON.parse(savedMiles);
-      setMilestones(Array.isArray(parsedMiles) ? parsedMiles : defaultMilestones);
-    } else {
-      setMilestones(defaultMilestones);
-      localStorage.setItem('sreeraam_about_milestones', JSON.stringify(defaultMilestones));
-    }
-
-    // 6. Careers CRUD
-    const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
-    if (savedJobs) {
-      const parsedJobs = JSON.parse(savedJobs);
-      setCareers(Array.isArray(parsedJobs) ? parsedJobs : defaultCareers);
-    } else {
-      setCareers(defaultCareers);
-      localStorage.setItem('sreeraam_careers_jobs', JSON.stringify(defaultCareers));
-    }
-
-    // 7. Candidate Applications
-    const rawApps = JSON.parse(localStorage.getItem('sreeraam_job_applications') || '[]');
-    setApplications(Array.isArray(rawApps) ? rawApps : []);
-
-    // Load notifications from localStorage, fallback to generating them if empty
-    const savedNotifs = localStorage.getItem('sreeraam_notifications_admin');
-    if (savedNotifs) {
-      const rawNotifSavedNotifs = JSON.parse(savedNotifs);
-      setNotifications(Array.isArray(rawNotifSavedNotifs) ? rawNotifSavedNotifs : []);
-    } else {
-      const notifSavedInq = (() => { try { const d = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
-      const notifSavedApps = (() => { try { const d = JSON.parse(localStorage.getItem('sreeraam_job_applications') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
-      const notifRegUsers = (() => { try { const d = JSON.parse(localStorage.getItem('registeredUsers') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
-      const initialNotifs = [];
-      notifSavedInq.forEach(inq => {
-        initialNotifs.push({
-          id: Date.now() + Math.random(),
-          iconName: 'mail',
-          title: 'New Callback Request',
-          message: `${inq.name} inquired about ${inq.project}`,
-          time: inq.date || 'Today',
-          read: false
-        });
-      });
-      if (notifRegUsers.length > 0) {
-        const latest = notifRegUsers[notifRegUsers.length - 1];
-        initialNotifs.push({
-          id: Date.now() + Math.random() + 100,
-          iconName: 'users',
-          title: 'New Client Registration',
-          message: `${latest.name} (${latest.email}) registered`,
-          time: 'Recently',
-          read: false
-        });
+      // 2. Inquiries
+      const defaultInq = [];
+      const savedInq = localStorage.getItem('sreeraam_inquiries');
+      if (savedInq) {
+        const parsedInq = JSON.parse(savedInq);
+        setInquiries(Array.isArray(parsedInq) ? parsedInq : defaultInq);
+      } else {
+        setInquiries(defaultInq);
       }
-      notifSavedApps.forEach(app => {
-        initialNotifs.push({
-          id: Date.now() + Math.random() + 200,
-          iconName: 'clipboard',
-          title: 'New Job Application',
-          message: `${app.name} applied for ${app.role}`,
-          time: 'Recently',
-          read: false
+
+      // 3. Projects CRUD
+      const savedProj = localStorage.getItem('sreeraam_projects');
+      if (savedProj) {
+        const parsedProj = JSON.parse(savedProj);
+        setProjects(Array.isArray(parsedProj) ? parsedProj : defaultProjects);
+      } else {
+        setProjects(defaultProjects);
+      }
+
+      // 4. Divisions CRUD
+      const savedDivs = localStorage.getItem('sreeraam_divisions');
+      if (savedDivs) {
+        const parsedDivs = JSON.parse(savedDivs);
+        setDivisions(Array.isArray(parsedDivs) ? parsedDivs : defaultDivisions);
+      } else {
+        setDivisions(defaultDivisions);
+      }
+
+      // 5. About Milestones CRUD
+      const savedMiles = localStorage.getItem('sreeraam_about_milestones');
+      if (savedMiles) {
+        const parsedMiles = JSON.parse(savedMiles);
+        setMilestones(Array.isArray(parsedMiles) ? parsedMiles : defaultMilestones);
+      } else {
+        setMilestones(defaultMilestones);
+      }
+
+      // 6. Careers CRUD
+      const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
+      if (savedJobs) {
+        const parsedJobs = JSON.parse(savedJobs);
+        setCareers(Array.isArray(parsedJobs) ? parsedJobs : defaultCareers);
+      } else {
+        setCareers(defaultCareers);
+      }
+
+      // 7. Candidate Applications
+      const rawApps = JSON.parse(localStorage.getItem('sreeraam_job_applications') || '[]');
+      setApplications(Array.isArray(rawApps) ? rawApps : []);
+
+      // Load notifications from localStorage, fallback to generating them if empty
+      const savedNotifs = localStorage.getItem('sreeraam_notifications_admin');
+      if (savedNotifs) {
+        const rawNotifSavedNotifs = JSON.parse(savedNotifs);
+        setNotifications(Array.isArray(rawNotifSavedNotifs) ? rawNotifSavedNotifs : []);
+      } else {
+        const notifSavedInq = (() => { try { const d = JSON.parse(localStorage.getItem('sreeraam_inquiries') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
+        const notifSavedApps = (() => { try { const d = JSON.parse(localStorage.getItem('sreeraam_job_applications') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
+        const notifRegUsers = (() => { try { const d = JSON.parse(localStorage.getItem('registeredUsers') || '[]'); return Array.isArray(d) ? d : []; } catch(e) { return []; } })();
+        const initialNotifs = [];
+        notifSavedInq.forEach(inq => {
+          initialNotifs.push({
+            id: Date.now() + Math.random(),
+            iconName: 'mail',
+            title: 'New Callback Request',
+            message: `${inq.name} inquired about ${inq.project}`,
+            time: inq.date || 'Today',
+            read: false
+          });
         });
-      });
-      setNotifications(initialNotifs);
-      localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(initialNotifs));
-    }
+        if (notifRegUsers.length > 0) {
+          const latest = notifRegUsers[notifRegUsers.length - 1];
+          initialNotifs.push({
+            id: Date.now() + Math.random() + 100,
+            iconName: 'users',
+            title: 'New Client Registration',
+            message: `${latest.name} (${latest.email}) registered`,
+            time: 'Recently',
+            read: false
+          });
+        }
+        notifSavedApps.forEach(app => {
+          initialNotifs.push({
+            id: Date.now() + Math.random() + 200,
+            iconName: 'clipboard',
+            title: 'New Job Application',
+            message: `${app.name} applied for ${app.role}`,
+            time: 'Recently',
+            read: false
+          });
+        });
+        setNotifications(initialNotifs);
+        saveLocalAndCloud('sreeraam_notifications_admin', initialNotifs);
+      }
+    };
+
+    loadAllData();
+    window.addEventListener('sreeraam_db_update', loadAllData);
+    return () => window.removeEventListener('sreeraam_db_update', loadAllData);
   }, []);
 
   const saveDatabase = (key, data, setter, successMsg = 'Record saved successfully') => {
-    localStorage.setItem(key, JSON.stringify(data));
+    saveLocalAndCloud(key, data);
     setter(data);
     setEditingItem(null);
     setIsAdding(false);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Home as HomeIcon, Building, ShieldCheck, Palette, CheckCircle } from 'lucide-react';
-import { safeParseJson, asArray } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
 
 const defaultDivisions = [
   { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },
@@ -14,32 +14,38 @@ export default function Sectors() {
   const [divisions, setDivisions] = useState([]);
 
   useEffect(() => {
-    const savedDivs = localStorage.getItem('sreeraam_divisions');
-    const parsed = safeParseJson(savedDivs, null);
+    const loadData = () => {
+      const savedDivs = localStorage.getItem('sreeraam_divisions');
+      const parsed = safeParseJson(savedDivs, null);
 
-    if (!Array.isArray(parsed)) {
-      setDivisions(defaultDivisions);
-      localStorage.setItem('sreeraam_divisions', JSON.stringify(defaultDivisions));
-      return;
-    }
+      if (!Array.isArray(parsed)) {
+        setDivisions(defaultDivisions);
+        saveLocalAndCloud('sreeraam_divisions', defaultDivisions);
+        return;
+      }
 
-    const merged = defaultDivisions.map((defaultItem) => {
-      const storedItem = asArray(parsed, []).find((item) => item.id === defaultItem.id);
-      if (!storedItem) return defaultItem;
+      const merged = defaultDivisions.map((defaultItem) => {
+        const storedItem = parsed.find((item) => item.id === defaultItem.id);
+        if (!storedItem) return defaultItem;
 
-      const servicesAreValid = Array.isArray(storedItem.services) && storedItem.services.length === defaultItem.services.length;
-      return {
-        ...defaultItem,
-        ...storedItem,
-        services: servicesAreValid ? storedItem.services : defaultItem.services
-      };
-    });
+        const servicesAreValid = Array.isArray(storedItem.services) && storedItem.services.length === defaultItem.services.length;
+        return {
+          ...defaultItem,
+          ...storedItem,
+          services: servicesAreValid ? storedItem.services : defaultItem.services
+        };
+      });
 
-    if (JSON.stringify(merged) !== JSON.stringify(parsed)) {
-      localStorage.setItem('sreeraam_divisions', JSON.stringify(merged));
-    }
+      if (JSON.stringify(merged) !== JSON.stringify(parsed)) {
+        saveLocalAndCloud('sreeraam_divisions', merged);
+      }
 
-    setDivisions(merged);
+      setDivisions(merged);
+    };
+
+    loadData();
+    window.addEventListener('sreeraam_db_update', loadData);
+    return () => window.removeEventListener('sreeraam_db_update', loadData);
   }, []);
 
   const getIcon = (title) => {

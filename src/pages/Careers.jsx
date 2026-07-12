@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
-import { safeParseJson, asArray } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
 
 export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [formData, setFormData] = useState({ name: '', email: '', role: '', notes: '' });
@@ -10,30 +10,35 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
-    const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
-    let parsedJobs = [];
-    const raw = safeParseJson(savedJobs, null);
-    if (raw !== null) {
-      parsedJobs = asArray(raw, []);
-    } else {
-      parsedJobs = [
-        { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
-        { id: 2, title: 'Bespoke Carpenter / Installer', dept: 'Interior decoration', location: 'Rameswaram Office / Site', desc: 'Custom teak wood frame fittings, modular kitchen cabinet installations, and modular wardrobe carpentry works.' },
-        { id: 3, title: 'Structural CAD Drafter', dept: 'Engineering & Design', location: 'Rameswaram Head Office', desc: 'Prepare 2D/3D building plans, structural elevations, and coordinate approval documents with municipal specifications.' }
-      ];
-      localStorage.setItem('sreeraam_careers_jobs', JSON.stringify(parsedJobs));
-    }
-    setJobs(parsedJobs);
-    if (parsedJobs.length > 0) {
-      setFormData(prev => ({ ...prev, role: parsedJobs[0].title }));
-    }
+    const loadData = () => {
+      const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
+      let parsedJobs = [];
+      const raw = safeParseJson(savedJobs, null);
+      if (raw !== null) {
+        parsedJobs = asArray(raw, []);
+      } else {
+        parsedJobs = [
+          { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
+          { id: 2, title: 'Bespoke Carpenter / Installer', dept: 'Interior decoration', location: 'Rameswaram Office / Site', desc: 'Custom teak wood frame fittings, modular kitchen cabinet installations, and modular wardrobe carpentry works.' },
+          { id: 3, title: 'Structural CAD Drafter', dept: 'Engineering & Design', location: 'Rameswaram Head Office', desc: 'Prepare 2D/3D building plans, structural elevations, and coordinate approval documents with municipal specifications.' }
+        ];
+        saveLocalAndCloud('sreeraam_careers_jobs', parsedJobs);
+      }
+      setJobs(parsedJobs);
+      if (parsedJobs.length > 0) {
+        setFormData(prev => ({ ...prev, role: parsedJobs[0].title }));
+      }
+    };
+
+    loadData();
+    window.addEventListener('sreeraam_db_update', loadData);
+    return () => window.removeEventListener('sreeraam_db_update', loadData);
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
     
-    // Save application to localStorage for complete operational capability
     const savedApps = localStorage.getItem('sreeraam_job_applications');
     const rawApps = safeParseJson(savedApps, []);
     const currentApps = asArray(rawApps, []);
@@ -42,7 +47,7 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
       ...formData,
       date: new Date().toLocaleDateString()
     });
-    localStorage.setItem('sreeraam_job_applications', JSON.stringify(currentApps));
+    saveLocalAndCloud('sreeraam_job_applications', currentApps);
 
     // Save persistent admin notification
     const rawAdminNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
@@ -56,7 +61,7 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
       date: 'Just now',
       read: false
     });
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(adminNotifs));
+    saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
     
     setSubmitted(true);
   };

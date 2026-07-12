@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, CheckCircle, Clock } from 'lucide-react';
-import { safeParseJson, asArray } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', project: 'General Inquiry', message: '' });
@@ -22,7 +22,7 @@ export default function Contact() {
       message: formData.message,
       date: 'Just now'
     });
-    localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
+    saveLocalAndCloud('sreeraam_inquiries', inquiries);
 
     // Save persistent admin notification
     const rawNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
@@ -36,7 +36,7 @@ export default function Contact() {
       date: 'Just now',
       read: false
     });
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(adminNotifs));
+    saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
 
     setMsgSubmitted(true);
   };

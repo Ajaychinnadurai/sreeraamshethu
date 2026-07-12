@@ -5,7 +5,7 @@ import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
-import { safeParseJson, asArray } from './utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, startDbSync } from './utils/storage';
 
 // Pages
 import Home from './pages/Home';
@@ -63,15 +63,15 @@ function App() {
             phone: '9876543210',
             password: 'password'
           });
-          localStorage.setItem('registeredUsers', JSON.stringify(users));
+          saveLocalAndCloud('registeredUsers', users);
         }
       } else {
-        localStorage.setItem('registeredUsers', JSON.stringify([{
+        saveLocalAndCloud('registeredUsers', [{
           name: 'Kumar',
           email: 'kumar@mail.com',
           phone: '9876543210',
           password: 'password'
-        }]));
+        }]);
       }
     } catch (e) {
       console.error('Error seeding default client user:', e);
@@ -111,6 +111,27 @@ function App() {
     }
   }, [selectedAdminClientEmail, allMessages]);
 
+  // Start background database sync loop
+  useEffect(() => {
+    const keys = [
+      'sreeraam_projects',
+      'sreeraam_divisions',
+      'sreeraam_about_milestones',
+      'sreeraam_careers_jobs',
+      'sreeraam_inquiries',
+      'sreeraam_job_applications',
+      'sreeraam_chat_messages',
+      'registeredUsers',
+      'sreeraam_notifications_admin'
+    ];
+    if (currentUser && currentUser.role === 'client') {
+      keys.push(`sreeraam_notifications_client_${currentUser.email.toLowerCase()}`);
+    }
+    const stopSync = startDbSync(keys);
+    return () => stopSync();
+  }, [currentUser]);
+
+  // Listen to background sync updates to update state reactively
   useEffect(() => {
     if (!currentUser) {
       setClientNotifications([]);
@@ -119,41 +140,25 @@ function App() {
       return;
     }
 
-    if (currentUser.role === 'admin') {
-      const loadAllMessages = () => {
+    const loadData = () => {
+      if (currentUser.role === 'admin') {
         const raw = safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []);
         setAllMessages(asArray(raw, []));
-      };
-      loadAllMessages();
-      const interval = setInterval(loadAllMessages, 3000);
-      return () => clearInterval(interval);
-    } else {
-      const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
-      const loadNotifs = () => {
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          setClientNotifications(JSON.parse(saved));
-        } else {
-          setClientNotifications([]);
-          localStorage.setItem(key, JSON.stringify([]));
-        }
-      };
+      } else {
+        const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
+        const savedNotifs = localStorage.getItem(key);
+        setClientNotifications(savedNotifs ? safeParseJson(savedNotifs, []) : []);
 
-      const loadMessages = () => {
-        const raw = safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []);
-        const all = asArray(raw, []);
+        const rawMsgs = safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []);
+        const all = asArray(rawMsgs, []);
         const mine = all.filter(m => m.clientEmail === currentUser.email);
         setClientMessages(mine);
-      };
+      }
+    };
 
-      loadNotifs();
-      loadMessages();
-      const interval = setInterval(() => {
-        loadNotifs();
-        loadMessages();
-      }, 3000);
-      return () => clearInterval(interval);
-    }
+    loadData();
+    window.addEventListener('sreeraam_db_update', loadData);
+    return () => window.removeEventListener('sreeraam_db_update', loadData);
   }, [currentUser]);
 
   const markClientAllRead = () => {
@@ -161,7 +166,7 @@ function App() {
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
     const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.map(n => ({ ...n, read: true }));
-    localStorage.setItem(key, JSON.stringify(updated));
+    saveLocalAndCloud(key, updated);
     setClientNotifications(updated);
   };
 
@@ -170,7 +175,7 @@ function App() {
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
     const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.map(n => n.id === id ? { ...n, read: true } : n);
-    localStorage.setItem(key, JSON.stringify(updated));
+    saveLocalAndCloud(key, updated);
     setClientNotifications(updated);
   };
 
@@ -179,7 +184,7 @@ function App() {
     const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
     const saved = asArray(safeParseJson(localStorage.getItem(key), []), []);
     const updated = saved.filter(n => n.id !== id);
-    localStorage.setItem(key, JSON.stringify(updated));
+    saveLocalAndCloud(key, updated);
     setClientNotifications(updated);
   };
 
@@ -196,7 +201,7 @@ function App() {
     };
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(msg);
-    localStorage.setItem('sreeraam_chat_messages', JSON.stringify(all));
+    saveLocalAndCloud('sreeraam_chat_messages', all);
     setClientMessages(prev => [...prev, msg]);
 
     // Save persistent admin notification
@@ -210,7 +215,7 @@ function App() {
       date: 'Just now',
       read: false
     });
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(adminNotifs));
+    saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
 
     setClientNewMsg('');
     setClientInquiryStatus(true);
@@ -229,7 +234,7 @@ function App() {
           time: 'Just now'
         };
         current.push(reply);
-        localStorage.setItem('sreeraam_chat_messages', JSON.stringify(current));
+        saveLocalAndCloud('sreeraam_chat_messages', current);
         setClientMessages(prev => [...prev, reply]);
 
         // Save client notification locally
@@ -243,7 +248,7 @@ function App() {
           time: 'Just now',
           read: false
         });
-        localStorage.setItem(key, JSON.stringify(clientNotifs));
+        saveLocalAndCloud(key, clientNotifs);
         setClientNotifications(clientNotifs);
       }
       setClientInquiryStatus(false);
@@ -277,7 +282,7 @@ function App() {
       if (currentUser.role === 'client') {
         const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
         const updated = all.map(m => (m.clientEmail === currentUser.email && m.sender === 'admin') ? { ...m, read: true } : m);
-        localStorage.setItem('sreeraam_chat_messages', JSON.stringify(updated));
+        saveLocalAndCloud('sreeraam_chat_messages', updated);
         setClientMessages(updated.filter(m => m.clientEmail === currentUser.email));
       }
     }
@@ -287,7 +292,7 @@ function App() {
     setSelectedAdminClientEmail(email);
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     const updated = all.map(m => (m.clientEmail === email && m.sender === 'client') ? { ...m, read: true } : m);
-    localStorage.setItem('sreeraam_chat_messages', JSON.stringify(updated));
+    saveLocalAndCloud('sreeraam_chat_messages', updated);
     setAllMessages(updated);
   };
 
@@ -304,7 +309,7 @@ function App() {
     };
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(reply);
-    localStorage.setItem('sreeraam_chat_messages', JSON.stringify(all));
+    saveLocalAndCloud('sreeraam_chat_messages', all);
     setAllMessages(all);
 
     // Save client notification locally so client is notified in their header bell
@@ -319,7 +324,7 @@ function App() {
       date: 'Just now',
       read: false
     });
-    localStorage.setItem(clientKey, JSON.stringify(clientNotifs));
+    saveLocalAndCloud(clientKey, clientNotifs);
 
     setAdminReplyText('');
   };
@@ -355,7 +360,7 @@ function App() {
       message: quoteFormData.notes || 'Inquiry submitted via booking modal.',
       date: 'Just now'
     });
-    localStorage.setItem('sreeraam_inquiries', JSON.stringify(inquiries));
+    saveLocalAndCloud('sreeraam_inquiries', inquiries);
 
     // Save persistent admin notification
     const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
@@ -368,7 +373,7 @@ function App() {
       date: 'Just now',
       read: false
     });
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(adminNotifs));
+    saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
 
     setQuoteSubmitted(true);
   };
