@@ -134,12 +134,8 @@ function App() {
         if (saved) {
           setClientNotifications(JSON.parse(saved));
         } else {
-          const defaults = [
-            { id: 1, iconName: 'check', title: 'Site Inspection Passed', message: 'Foundation steel reinforcements have passed municipal inspection.', time: '10:15 AM', read: false },
-            { id: 2, iconName: 'file', title: 'Documents Available', message: 'Construction agreement and blueprints are ready for download.', time: 'Yesterday', read: false }
-          ];
-          setClientNotifications(defaults);
-          localStorage.setItem(key, JSON.stringify(defaults));
+          setClientNotifications([]);
+          localStorage.setItem(key, JSON.stringify([]));
         }
       };
 
