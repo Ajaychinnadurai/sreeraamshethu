@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check, Eye, EyeOff } from 'lucide-react';
-import { safeParseJson, saveLocalAndCloud, supabase } from '../utils/storage';
+import { safeParseJson, saveLocalAndCloud, syncKeyFromCloud, supabase } from '../utils/storage';
 import bcrypt from 'bcryptjs';
 
 export default function Auth({ onLoginSuccess, inModal }) {
@@ -10,6 +10,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [errorMsg, setErrorMsg] = useState('');
+  const [syncing, setSyncing] = useState(false);
   const [success, setSuccess] = useState(null); // { user, type: 'login' | 'register' }
   const successTimerRef = useRef(null);
 
@@ -100,7 +101,35 @@ export default function Auth({ onLoginSuccess, inModal }) {
       }
 
       if (!user) {
-        setErrorMsg('Invalid email or password.');
+        // User not found locally — force a fresh sync from Supabase with retries
+        setSyncing(true);
+        try {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            await syncKeyFromCloud('registeredUsers');
+            await new Promise(r => setTimeout(r, attempt === 0 ? 800 : 2000));
+
+            const retryUsers = safeParseJson(localStorage.getItem('registeredUsers'), []);
+            const retryMatch = retryUsers.find(u => u.email.toLowerCase() === normalizedEmail);
+            if (retryMatch) {
+              const dbPassword = retryMatch.password;
+              const isMatch = dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')
+                ? bcrypt.compareSync(formData.password, dbPassword)
+                : formData.password === dbPassword;
+              if (isMatch) {
+                user = retryMatch;
+                break;
+              }
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Sync retry failed:', syncErr);
+        } finally {
+          setSyncing(false);
+        }
+      }
+
+      if (!user) {
+        setErrorMsg('Invalid email or password. If you just signed up, please wait a moment and try again.');
         return;
       }
 
@@ -150,8 +179,15 @@ export default function Auth({ onLoginSuccess, inModal }) {
       }
 
       if (!userExists) {
-        const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
-        userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+        try {
+          await syncKeyFromCloud('registeredUsers');
+          const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
+          userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+        } catch (syncErr) {
+          console.warn('Signup duplicate check sync failed:', syncErr);
+          const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
+          userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+        }
       }
 
       if (userExists) {
@@ -182,6 +218,38 @@ export default function Auth({ onLoginSuccess, inModal }) {
   // Shared form renderer (error + fields + submit button)
   const renderForm = () => (
     <>
+      {syncing && (
+        <div
+          style={{
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            color: '#1E40AF',
+            padding: '12px 16px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '20px'
+          }}
+        >
+          <div
+            style={{
+              width: '14px',
+              height: '14px',
+              border: '2px solid #BFDBFE',
+              borderTop: '2px solid #1E40AF',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              flexShrink: 0
+            }}
+          />
+          Syncing account data from server...
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
       {errorMsg && (
         <div
           style={{
@@ -337,7 +405,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
           </div>
         )}
 
-        <button type="submit" className="btn-vgn btn-vgn-blue" style={{ width: '100%', marginTop: '10px', gap: '8px' }}>
+        <button type="submit" className="btn-vgn btn-vgn-blue" style={{ width: '100%', marginTop: '10px', gap: '8px', opacity: syncing ? 0.6 : 1 }} disabled={syncing}>
           {isLogin ? (
             <>LOG IN <LogIn size={16} /></>
           ) : (

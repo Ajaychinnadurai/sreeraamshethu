@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
 import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb } from './utils/storage';
+import { registerAbTestDebugShortcut } from './utils/abTest';
 
 // Pages
 import Home from './pages/Home';
@@ -330,11 +331,17 @@ function App() {
     return localStorage.getItem('sreeraam_anim_speed') || 'fast';
   });
 
-  // Sync anim-speed attribute on root and persist
+  // Syncing attributes & registering keyboard shortcuts
   useEffect(() => {
     document.documentElement.setAttribute('data-anim-speed', animSpeed);
     localStorage.setItem('sreeraam_anim_speed', animSpeed);
   }, [animSpeed]);
+
+  // Register A/B test debug shortcut (Ctrl+Shift+D)
+  useEffect(() => {
+    const unregister = registerAbTestDebugShortcut();
+    return unregister;
+  }, []);
 
   const pageTransitionDur = animSpeed === 'fast' ? 0.3 : animSpeed === 'normal' ? 0.5 : 0.7;
 
