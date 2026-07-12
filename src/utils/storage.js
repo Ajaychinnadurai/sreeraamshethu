@@ -223,54 +223,53 @@ export async function initializeDb(key, defaults = []) {
           }
         }
 
-        // Supabase has no data
-        if (localRaw) {
-          const parsed = JSON.parse(localRaw);
-          if (key === 'registeredUsers' && Array.isArray(parsed) && !parsed.some(u => u.email.toLowerCase() === 'kumar@mail.com')) {
-            parsed.push({ name: 'Kumar', email: 'kumar@mail.com', phone: '9876543210', password: 'password' });
-          }
-          const dataToSave = Array.isArray(parsed) ? parsed : defaults;
-          
-          let queryDel = supabase.from(table).delete();
-          if (type === 'filtered') {
-            Object.keys(filter).forEach(k => { queryDel = queryDel.eq(k, filter[k]); });
+        // Supabase has no data (or table query returned empty array)
+        if (!error) {
+          const parsedLocal = localRaw ? safeParseJson(localRaw, null) : null;
+          const localIsEmpty = parsedLocal === null || (Array.isArray(parsedLocal) && parsedLocal.length === 0);
+
+          if (localIsEmpty) {
+            // Seed defaults directly
+            let queryDel = supabase.from(table).delete();
+            if (type === 'filtered') {
+              Object.keys(filter).forEach(k => { queryDel = queryDel.eq(k, filter[k]); });
+            } else {
+              queryDel = queryDel.neq('id', 0);
+            }
+            await queryDel;
+
+            if (defaults.length > 0) {
+              const rowsToInsert = defaults.map(item => {
+                let r = toDbRow(key, item);
+                if (type === 'filtered') r = { ...r, ...filter };
+                return r;
+              });
+              await supabase.from(table).insert(rowsToInsert);
+            }
+            localStorage.setItem(key, JSON.stringify(defaults));
+            window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data: defaults } }));
+            return;
           } else {
-            queryDel = queryDel.neq('id', 0);
+            // Local has data. Replicate local data to Supabase.
+            let queryDel = supabase.from(table).delete();
+            if (type === 'filtered') {
+              Object.keys(filter).forEach(k => { queryDel = queryDel.eq(k, filter[k]); });
+            } else {
+              queryDel = queryDel.neq('id', 0);
+            }
+            await queryDel;
+
+            if (parsedLocal.length > 0) {
+              const rowsToInsert = parsedLocal.map(item => {
+                let r = toDbRow(key, item);
+                if (type === 'filtered') r = { ...r, ...filter };
+                return r;
+              });
+              await supabase.from(table).insert(rowsToInsert);
+            }
+            return;
           }
-          await queryDel;
-
-          if (dataToSave.length > 0) {
-            const rowsToInsert = dataToSave.map(item => {
-              let r = toDbRow(key, item);
-              if (type === 'filtered') r = { ...r, ...filter };
-              return r;
-            });
-            await supabase.from(table).insert(rowsToInsert);
-          }
-          localStorage.setItem(key, JSON.stringify(dataToSave));
-          return;
         }
-
-        // Both are empty. Seed defaults.
-        let queryDel = supabase.from(table).delete();
-        if (type === 'filtered') {
-          Object.keys(filter).forEach(k => { queryDel = queryDel.eq(k, filter[k]); });
-        } else {
-          queryDel = queryDel.neq('id', 0);
-        }
-        await queryDel;
-
-        if (defaults.length > 0) {
-          const rowsToInsert = defaults.map(item => {
-            let r = toDbRow(key, item);
-            if (type === 'filtered') r = { ...r, ...filter };
-            return r;
-          });
-          await supabase.from(table).insert(rowsToInsert);
-        }
-        localStorage.setItem(key, JSON.stringify(defaults));
-        window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data: defaults } }));
-        return;
       }
     }
 
