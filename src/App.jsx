@@ -40,25 +40,8 @@ function App() {
     }
   })();
 
-  // Safely initialize page route from localStorage, respecting role privileges
-  const initialPage = (() => {
-    try {
-      const savedPage = localStorage.getItem('sreeraam_active_page');
-      if (savedPage) {
-        if (savedPage === 'dashboard') {
-          if (initialUser && initialUser.role === 'admin') return 'dashboard';
-          return 'home';
-        }
-        return savedPage;
-      }
-    } catch (e) {
-      console.error('Error loading activePage from localStorage:', e);
-    }
-    return 'home';
-  })();
-
   const [currentUser, setCurrentUser] = useState(initialUser);
-  const [activePage, setActivePage] = useState(initialPage);
+  const [activePage, setActivePage] = useState('home');
 
   // Seed default client credentials on initial load safely
   useEffect(() => {
@@ -79,10 +62,6 @@ function App() {
       initializeDb(`sreeraam_notifications_client_${currentUser.email.toLowerCase()}`, []);
     }
   }, [currentUser]);
-
-  useEffect(() => {
-    localStorage.setItem('sreeraam_active_page', activePage);
-  }, [activePage]);
 
   // Persist user session in localStorage to preserve login state on refresh
   useEffect(() => {
