@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import SEO from '../components/SEO';
 import { MapPin, ArrowLeft, Filter, Phone, Download, HelpCircle, CheckCircle, Play } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb, generateUniqueId } from '../utils/storage';
 
 export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -61,7 +61,7 @@ export default function Projects() {
     // Save persistent admin notification
     const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
     adminNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'mail',
       title: 'Project Detail Request',
       message: `${brochureEmail} requested brochure for ${selectedProject ? selectedProject.name : 'a project'}`,

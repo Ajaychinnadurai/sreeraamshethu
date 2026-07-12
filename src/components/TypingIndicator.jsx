@@ -57,7 +57,7 @@ export default function TypingIndicator({ name = 'Admin' }) {
         fontWeight: '600',
         whiteSpace: 'nowrap'
       }}>
-        {name} typing...
+        {name} is typing...
       </span>
     </motion.div>
   );

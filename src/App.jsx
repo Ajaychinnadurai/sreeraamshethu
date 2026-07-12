@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, Mail as MailIcon, Users as UsersIcon, Edit3, Trash2 } from 'lucide-react';
 import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
-import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb, supabase } from './utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb, supabase, generateUniqueId } from './utils/storage';
 import { playNotificationSound } from './utils/sound';
 import ToastNotification from './components/ToastNotification';
 import QuickReplyBar from './components/QuickReplyBar';
@@ -352,7 +352,7 @@ function App() {
     // Save persistent admin notification
     const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
     adminNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'message',
       title: 'New Client Message',
       message: `${currentUser.name}: ${text.trim().substring(0, 60)}${text.trim().length > 60 ? '...' : ''}`,
@@ -387,7 +387,7 @@ function App() {
         const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
         const clientNotifs = asArray(safeParseJson(localStorage.getItem(key), []), []);
         clientNotifs.unshift({
-          id: Date.now() + Math.random(),
+          id: generateUniqueId(),
           iconName: 'bell',
           title: 'Auto-Reply Sent',
           message: 'Admin has been notified of your message.',
@@ -409,6 +409,9 @@ function App() {
     sendMessage(clientNewMsg, !!clientAttachment);
   };
 
+  // Thread search state
+  const [threadSearchQuery, setThreadSearchQuery] = useState('');
+
   // Group client threads for Admin chat
   const clientThreads = allMessages.reduce((acc, m) => {
     if (m.clientEmail) {
@@ -420,7 +423,14 @@ function App() {
     return acc;
   }, {});
 
-  const threadList = Object.values(clientThreads).sort((a, b) => {
+  // Filter threads by search query
+  const filteredThreadList = Object.values(clientThreads).filter(t => {
+    if (!threadSearchQuery.trim()) return true;
+    const q = threadSearchQuery.toLowerCase();
+    return t.clientName?.toLowerCase().includes(q) || t.clientEmail?.toLowerCase().includes(q);
+  });
+
+  const threadList = filteredThreadList.sort((a, b) => {
     const aLast = a.messages.length > 0 ? a.messages[a.messages.length - 1].id : 0;
     const bLast = b.messages.length > 0 ? b.messages[b.messages.length - 1].id : 0;
     return bLast - aLast;
@@ -531,17 +541,16 @@ function App() {
     saveLocalAndCloud('sreeraam_chat_messages', all);
     setAllMessages(all);
 
-    // Clear typing indicator
-    saveLocalAndCloud('sreeraam_typing_admin', { timestamp: 0 });
-
     // Save client notification locally so client is notified in their header bell
     const clientKey = `sreeraam_notifications_client_${selectedAdminClientEmail.toLowerCase()}`;
     const clientNotifs = asArray(safeParseJson(localStorage.getItem(clientKey), []), []);
     clientNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'message',
       title: 'New Admin Message',
-      message: `Sethu Pandian B.E. replied: "${adminReplyText.trim().substring(0, 45)}${adminReplyText.trim().length > 45 ? '...' : ''}"`,
+      message: adminReplyText.trim() 
+        ? `Sethu Pandian B.E. replied: "${adminReplyText.trim().substring(0, 45)}${adminReplyText.trim().length > 45 ? '...' : ''}"` 
+        : 'Sethu Pandian B.E. sent an attachment.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: 'Just now',
       read: false
@@ -593,7 +602,7 @@ function App() {
     // Save persistent admin notification
     const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
     adminNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'mail',
       title: 'New Booking Inquiry',
       message: `${quoteFormData.name} requested quote for ${quoteFormData.sector}`,
@@ -646,6 +655,18 @@ function App() {
       default:
         return <Home onNavigate={setActivePage} onRequestQuote={() => setIsQuoteOpen(true)} />;
     }
+  };
+
+  // ── Date grouping helper for messages ──
+  const getDateGroup = (msgId) => {
+    const msgDate = new Date(msgId);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (msgDate.toDateString() === today.toDateString()) return 'Today';
+    if (msgDate.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return msgDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   return (
@@ -913,6 +934,15 @@ function App() {
                     !selectedAdminClientEmail ? (
                       /* Admin thread list view */
                       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'var(--bg-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Thread search */}
+                        <input
+                          type="text"
+                          placeholder="Search clients..."
+                          value={threadSearchQuery}
+                          onChange={(e) => setThreadSearchQuery(e.target.value)}
+                          className="vgn-input"
+                          style={{ height: '36px', fontSize: '12px', padding: '8px 12px', borderRadius: '8px' }}
+                        />
                         {threadList.length > 0 ? (
                           threadList.map(thread => {
                             const lastMsg = thread.messages[thread.messages.length - 1];
@@ -945,11 +975,10 @@ function App() {
                                   <p style={{ fontSize: '11px', color: 'var(--gray-500)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {lastMsg.sender === 'admin' ? 'You: ' : ''}{lastMsg.text}
                                   </p>
-                                )}
-                              </div>
-                            );
-                          })
-                        ) : (
+                                )}                                  </div>
+                              );
+                            })
+                          ) : (
                           <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--gray-400)', fontSize: '12px', padding: '20px' }}>
                             No messages yet from clients.
                           </div>
@@ -961,13 +990,19 @@ function App() {
                         <div ref={adminChatContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'var(--bg-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                           {currentThread && currentThread.messages.length > 0 ? (
                             currentThread.messages.map((m, i) => {
+                              const showDateGroup = i === 0 || getDateGroup(m.id) !== getDateGroup(currentThread.messages[i - 1].id);
                               const isAdmin = m.sender === 'admin';
                               const formattedParts = !isAdmin ? formatMessageText(m.text) : m.text;
                               const canEdit = isAdmin && isWithinEditWindow(m.id);
                               const isEditing = editingMessageId === m.id;
                               return (
+                                <React.Fragment key={i}>
+                                  {showDateGroup && (
+                                    <div style={{ textAlign: 'center', padding: '4px 0', fontSize: '10px', fontWeight: '700', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                      {getDateGroup(m.id)}
+                                    </div>
+                                  )}
                                 <div
-                                  key={i}
                                   style={{
                                     alignSelf: isAdmin ? 'flex-end' : 'flex-start',
                                     background: isAdmin ? 'var(--vgn-blue-dark)' : 'var(--white)',
@@ -1096,10 +1131,11 @@ function App() {
                                   <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                     {isAdmin ? 'You • ' : `${currentThread.clientName} • `} {m.time}
                                   </div>
-                                </div>
-                              );
-                            })
-                          ) : (
+                              </div>
+                              </React.Fragment>
+                            );
+                          })
+                        ) : (
                             <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--gray-400)', fontSize: '12px' }}>
                               Start typing a message below.
                             </div>
@@ -1146,9 +1182,15 @@ function App() {
                             const formattedParts = isAdminReply ? formatMessageText(m.text) : m.text;
                             const canEdit = !isAdminReply && isWithinEditWindow(m.id);
                             const isEditing = editingMessageId === m.id;
+                            const showDateGroup = i === 0 || getDateGroup(m.id) !== getDateGroup(clientMessages[i - 1].id);
                             return (
+                              <React.Fragment key={i}>
+                                {showDateGroup && (
+                                  <div style={{ textAlign: 'center', padding: '4px 0', fontSize: '10px', fontWeight: '700', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    {getDateGroup(m.id)}
+                                  </div>
+                                )}
                               <div
-                                key={i}
                                 style={{
                                   alignSelf: isAdminReply ? 'flex-start' : 'flex-end',
                                   background: isAdminReply ? 'var(--white)' : 'var(--vgn-blue-dark)',
@@ -1276,11 +1318,11 @@ function App() {
 
                                 <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                   {isAdminReply ? 'Sethu Pandian B.E. (Admin) • ' : 'You • '} {m.time}
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
+                                </div>                                  </div>
+                                </React.Fragment>
+                              );
+                            })
+                          ) : (
                           <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--gray-400)', fontSize: '12px', padding: '20px' }}>
                             Ask about structural elevation updates, teak woodwork customization, or booking schedules below.
                           </div>

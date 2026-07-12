@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Mail, ClipboardCheck, ArrowUpRight, MessageCircle, Plus, Edit2, Trash2, Save, X, Info, Bell, Search, ArrowUpDown, Send } from 'lucide-react';
 import ProfileButton from '../components/ProfileButton';
-import { saveLocalAndCloud, safeParseJson } from '../utils/storage';
+import { saveLocalAndCloud, safeParseJson, generateUniqueId } from '../utils/storage';
 import { playNotificationSound } from '../utils/sound';
 import ToastNotification from '../components/ToastNotification';
 
@@ -57,7 +57,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
 
   const addNotification = (item) => {
     const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
-    const newNotif = { id: Date.now() + Math.random(), read: false, ...item };
+    const newNotif = { id: generateUniqueId(), read: false, ...item };
     const updated = [newNotif, ...saved];
     saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
@@ -296,7 +296,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
         const initialNotifs = [];
         notifSavedInq.forEach(inq => {
           initialNotifs.push({
-            id: Date.now() + Math.random(),
+            id: generateUniqueId(),
             iconName: 'mail',
             title: 'New Callback Request',
             message: `${inq.name} inquired about ${inq.project}`,
@@ -307,7 +307,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
         if (notifRegUsers.length > 0) {
           const latest = notifRegUsers[notifRegUsers.length - 1];
           initialNotifs.push({
-            id: Date.now() + Math.random() + 100,
+            id: generateUniqueId(),
             iconName: 'users',
             title: 'New Client Registration',
             message: `${latest.name} (${latest.email}) registered`,
@@ -317,7 +317,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
         }
         notifSavedApps.forEach(app => {
           initialNotifs.push({
-            id: Date.now() + Math.random() + 200,
+            id: generateUniqueId(),
             iconName: 'clipboard',
             title: 'New Job Application',
             message: `${app.name} applied for ${app.role}`,

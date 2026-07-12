@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
 import { Mail, Phone, MapPin, Send, CheckCircle, Clock } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, generateUniqueId } from '../utils/storage';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', project: 'General Inquiry', message: '' });
@@ -29,7 +29,7 @@ export default function Contact() {
     const rawNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const adminNotifs = asArray(rawNotifs, []);
     adminNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'mail',
       title: 'New Contact Message',
       message: `${formData.name} sent message: "${formData.message.substring(0, 40)}${formData.message.length > 40 ? '...' : ''}"`,

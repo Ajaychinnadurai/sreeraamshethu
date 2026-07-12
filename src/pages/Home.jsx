@@ -199,12 +199,40 @@ export default function Home({ onNavigate, onRequestQuote }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'transparent',
+          background: 'linear-gradient(150deg, #05050F 0%, #1A1A2E 50%, #0F0F1F 100%)',
           overflow: 'hidden',
           marginTop: '-85px',
           paddingTop: '85px'
         }}
       >
+        {/* Video Background — same as Layout A */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, overflow: 'hidden' }}>
+          {heroVideos.map((src, i) => (
+            <video
+              key={src}
+              ref={el => (videoRefs.current[i] = el)}
+              src={src}
+              preload="auto"
+              muted
+              playsInline
+              onCanPlay={() => handleVideoCanPlay(i)}
+              onEnded={handleVideoEnded}
+              className={i === 0 && !initialRevealDone && readyVideos.has(0) ? 'video-initial-reveal-b' : ''}
+              style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                opacity: i === videoIndex && readyVideos.has(i) ? 0.45 : 0,
+                transform: 'scale(1)',
+                transition: initialRevealDone ? 'opacity 2s ease-in-out' : 'none',
+                pointerEvents: 'none'
+              }}
+            />
+          ))}
+        </div>
 
         {/* Subtle geometric grid overlay */}
         <div
@@ -340,6 +368,18 @@ export default function Home({ onNavigate, onRequestQuote }) {
           </motion.div>
         </div>
 
+        {/* Decorative bottom fade */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '120px',
+            background: 'linear-gradient(to top, var(--bg-light) 0%, transparent 100%)',
+            zIndex: 1
+          }}
+        />
       </section>
 
       {/* B2. STATS — Compact horizontal strip */}
@@ -633,7 +673,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
   );
 
   // ── Render active layout ──
-  const renderLayoutA = () => (
+  const layoutContent = layoutVariant === 'B' ? renderLayoutB() : (
     <div style={{ width: '100%' }}>
       {/* 1. Hero banner & overlay slider */}
       <section
@@ -644,12 +684,41 @@ export default function Home({ onNavigate, onRequestQuote }) {
           width: '100%',
           display: 'flex',
           alignItems: 'center',
-          background: 'transparent',
+          background: 'linear-gradient(135deg, #0A0A18 0%, var(--vgn-blue-dark) 100%)',
           overflow: 'hidden',
           marginTop: '-85px',
           paddingTop: '85px'
         }}
       >
+        {/* Video Background — preload both, show active one when ready */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, overflow: 'hidden' }}>
+          {heroVideos.map((src, i) => (
+            <video
+              key={src}
+              ref={el => (videoRefs.current[i] = el)}
+              src={src}
+              preload="auto"
+              muted
+              playsInline
+              onCanPlay={() => handleVideoCanPlay(i)}
+              onEnded={handleVideoEnded}
+              className={i === 0 && !initialRevealDone && readyVideos.has(0) ? 'video-initial-reveal' : ''}
+              style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                opacity: i === videoIndex && readyVideos.has(i) ? 0.55 : 0,
+                transform: 'scale(1)',
+                transition: initialRevealDone ? 'opacity 2s ease-in-out' : 'none',
+                pointerEvents: 'none'
+              }}
+            />
+          ))}
+        </div>
+
         {/* Hero Overlay */}
         <div
           style={{
@@ -1241,73 +1310,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
         canonical="/"
         type="website"
       />
-    <div style={{ position: 'relative', width: '100%' }}>
-      {/* Lifted Video Background Cycler */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: layoutVariant === 'B' ? '92vh' : '85vh',
-          minHeight: layoutVariant === 'B' ? '650px' : '600px',
-          zIndex: 0,
-          pointerEvents: 'none',
-          marginTop: '-85px'
-        }}
-      >
-        {heroVideos.map((src, i) => (
-          <video
-            key={src}
-            ref={el => (videoRefs.current[i] = el)}
-            src={src}
-            preload="auto"
-            muted
-            playsInline
-            onCanPlay={() => handleVideoCanPlay(i)}
-            onEnded={handleVideoEnded}
-            className={i === 0 && !initialRevealDone && readyVideos.has(0) ? 'video-initial-reveal' : ''}
-            style={{
-              position: 'absolute',
-              top: 0, left: 0,
-              width: '100%',
-              height: '105%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              opacity: i === videoIndex && readyVideos.has(i) ? (layoutVariant === 'B' ? 0.45 : 0.55) : 0,
-              transform: 'scale(1)',
-              transition: initialRevealDone ? 'opacity 2.5s ease-in-out' : 'none',
-              pointerEvents: 'none'
-            }}
-          />
-        ))}
-        {/* Dark overlay for layout readability */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: layoutVariant === 'B' 
-              ? 'linear-gradient(150deg, rgba(5,5,15,0.72) 0%, rgba(26,26,46,0.85) 50%, rgba(15,15,31,0.72) 100%)'
-              : 'linear-gradient(to right, rgba(26, 26, 46, 0.72) 0%, rgba(26, 26, 46, 0.35) 100%)',
-            zIndex: 1
-          }}
-        />
-        {/* Seamless bottom fade overlay to blend dark video into light theme */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '180px',
-            background: `linear-gradient(to top, ${layoutVariant === 'B' ? 'var(--white)' : 'var(--bg-light)'} 0%, transparent 100%)`,
-            zIndex: 2,
-            pointerEvents: 'none'
-          }}
-        />
-      </div>
-
-      {layoutVariant === 'B' ? renderLayoutB() : renderLayoutA()}
-    </div></>
+      {layoutContent}
+    </>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '../components/SEO';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb, generateUniqueId } from '../utils/storage';
 
 export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [formData, setFormData] = useState({ name: '', email: '', role: '', notes: '' });
@@ -47,7 +47,7 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
     const rawAdminNotifs = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const adminNotifs = asArray(rawAdminNotifs, []);
     adminNotifs.unshift({
-      id: Date.now() + Math.random(),
+      id: generateUniqueId(),
       iconName: 'clipboard',
       title: 'New Job Application',
       message: `${formData.name} applied for ${formData.role}`,

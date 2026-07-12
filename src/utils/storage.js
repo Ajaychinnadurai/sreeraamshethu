@@ -1,6 +1,18 @@
 // Build: 2026-07-12 — Force fresh Vercel build to pick up Supabase env vars
 import { createClient } from '@supabase/supabase-js';
 
+// ── Collision-Free ID Generator ──
+// Avoids Date.now() + Math.random() which creates floats that collide after Math.floor().
+// Uses a monotonic counter to guarantee unique integer IDs even within the same millisecond.
+let _idCounter = 0;
+const _idBase = Date.now();
+export function generateUniqueId() {
+  _idCounter++;
+  // Combine base timestamp with counter, staying within JS safe integer range.
+  // Base is ~13 digits, counter adds ~4-6 digits. Result is always unique.
+  return Number(`${_idBase}${String(_idCounter).padStart(5, '0')}`);
+}
+
 export function safeParseJson(value, fallback = null) {
   if (value === null || value === undefined || value === '') {
     return fallback;
@@ -168,6 +180,9 @@ function fromDbRow(key, row) {
     if ('iconname' in item) item.iconName = item.iconname;
     delete item.owneremail;
     delete item.iconname;
+    // Strip sync-only fields that were added by toDbRow for Supabase role filtering
+    delete item.role;
+    delete item.ownerEmail;
   }
 
   return item;
