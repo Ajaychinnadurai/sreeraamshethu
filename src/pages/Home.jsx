@@ -13,18 +13,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
   const [searchCategory, setSearchCategory] = useState('All');
 
 
-  // A/B Test: Landing page layout variant (from URL ?variant=a|b or stored/random)
-  const [layoutVariant] = useState(() => {
-    const { variant, source } = resolveVariantFromUrl(LAYOUT_TEST.name, ['A', 'B']);
-    console.log(`[A/B Test] Layout variant ${variant} (source: ${source})`);
-    // Clean up URL param to keep URLs clean
-    if (source === 'url') {
-      const url = new URL(window.location);
-      url.searchParams.delete('variant');
-      window.history.replaceState({}, '', url);
-    }
-    return variant;
-  });
+  // Set landing page layout variant to B globally to ensure consistent layout across all devices
+  const [layoutVariant] = useState('B');
 
   // Track layout impression
   useEffect(() => {
