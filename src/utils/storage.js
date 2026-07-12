@@ -58,11 +58,31 @@ function toDbRow(key, item) {
   // Strip frontend-only temporary UI states
   delete row.typeField;
 
+  // ── UNIVERSAL FIXES (apply to ALL data types) ──
+
+  // 1. Ensure 'id' is always an integer (bigint columns reject floats)
+  //    Some code uses Date.now() + Math.random() which creates a float
+  if ('id' in row) {
+    row.id = Math.floor(row.id);
+  }
+
+  // 2. Ensure 'read' field has a default if it's a required column
+  //    chat_messages and notifications tables have NOT NULL on read
+  if (key === 'sreeraam_chat_messages' ||
+      key === 'sreeraam_notifications_admin' ||
+      key.startsWith('sreeraam_notifications_client_')) {
+    if (!('read' in row) || row.read === null || row.read === undefined) {
+      row.read = false;
+    }
+  }
+
+  // ── KEY-SPECIFIC FIXES ──
+
   // Ensure required fields for registered_users table
   if (key === 'registeredUsers') {
     // Generate a unique id if not present (Postgres expects non-null id)
     if (!row.id) {
-      row.id = Date.now() + ((row.email) ? row.email.length : 0);
+      row.id = Math.floor(Date.now() + ((row.email) ? row.email.length : 0));
     }
     // Default role to 'client' if not set
     if (!row.role) {

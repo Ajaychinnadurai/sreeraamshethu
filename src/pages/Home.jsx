@@ -195,11 +195,39 @@ export default function Home({ onNavigate, onRequestQuote }) {
           paddingTop: '85px'
         }}
       >
+        {/* Video Background — same as Layout A */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, overflow: 'hidden' }}>
+          {heroVideos.map((src, i) => (
+            <video
+              key={src}
+              src={src}
+              preload="auto"
+              muted
+              playsInline
+              loop
+              autoPlay={i === videoIndex}
+              onCanPlay={() => handleVideoCanPlay(i)}
+              style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                opacity: i === videoIndex && readyVideos.has(i) ? 0.45 : 0,
+                transition: 'opacity 1.5s ease-in-out',
+                pointerEvents: 'none'
+              }}
+            />
+          ))}
+        </div>
+
         {/* Subtle geometric grid overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
+            zIndex: 1,
             opacity: 0.04,
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -210,6 +238,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
         <div
           style={{
             position: 'absolute',
+            zIndex: 1,
             top: '15%',
             left: '50%',
             transform: 'translateX(-50%)',
