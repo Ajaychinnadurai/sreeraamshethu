@@ -34,8 +34,9 @@ export default function MessageReactions({
     setShowPicker(false);
   };
 
-  const entries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
-  const totalReactions = entries.reduce((sum, [_, users]) => sum + users.length, 0);
+  const safeReactions = reactions || {};
+  const entries = Object.entries(safeReactions).filter(([_, users]) => users && users.length > 0);
+  const totalReactions = entries.reduce((sum, [_, users]) => sum + (users ? users.length : 0), 0);
 
   return (
     <div style={{

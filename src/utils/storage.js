@@ -395,10 +395,7 @@ export function startDbSync(keys = []) {
     if (!connectionHealth.canTry()) return;
 
     keys.forEach(async (key) => {
-      const result = await syncKeyFromCloud(key);
-      if (result === null) {
-        // syncKeyFromCloud already handles its own logging
-      }
+      await syncKeyFromCloud(key);
     });
   };
 

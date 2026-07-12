@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, X as XIcon, Mail as MailIcon, Users as UsersIcon, Edit3, Trash2 } from 'lucide-react';
+import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, Mail as MailIcon, Users as UsersIcon, Edit3, Trash2 } from 'lucide-react';
 import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
