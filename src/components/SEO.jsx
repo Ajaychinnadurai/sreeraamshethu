@@ -19,7 +19,8 @@ export default function SEO({
   canonical,
   image = '/og-default.jpg',
   type = 'website',
-  locale = 'en_IN'
+  locale = 'en_IN',
+  noindex = false
 }) {
   const siteName = 'Shree Ramsethu Constructions & Interiors';
   const fullTitle = title ? `${title} | ${siteName}` : siteName;
@@ -42,6 +43,13 @@ export default function SEO({
       }
       el.setAttribute('content', content);
     };
+
+    // ── Robots / Noindex ──
+    if (noindex) {
+      setMeta('robots', 'noindex, nofollow');
+    } else {
+      setMeta('robots', 'index, follow');
+    }
 
     // ── Standard meta ──
     setMeta('description', description);

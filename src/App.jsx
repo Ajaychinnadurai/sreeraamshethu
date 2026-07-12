@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, Mail as MailIcon, Users as UsersIcon, Edit3, Trash2 } from 'lucide-react';
 import ClayNavbar from './components/ClayNavbar';
@@ -16,16 +16,16 @@ import MessageReactions from './components/MessageReactions';
 import { registerAbTestDebugShortcut } from './utils/abTest';
 import { identifyUser, resetUser, trackEvent } from './utils/posthog';
 
-// Pages
-import Home from './pages/Home';
-import About from './pages/About';
-import Sectors from './pages/Sectors';
-import Services from './pages/Services';
-import Projects from './pages/Projects';
-import Careers from './pages/Careers';
-import Contact from './pages/Contact';
-import Auth from './pages/Auth';
-import DashboardAdmin from './pages/DashboardAdmin';
+// Lazy-loaded page components (code-split at build time)
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+const Sectors = lazy(() => import('./pages/Sectors'));
+const Services = lazy(() => import('./pages/Services'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Careers = lazy(() => import('./pages/Careers'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Auth = lazy(() => import('./pages/Auth'));
+const DashboardAdmin = lazy(() => import('./pages/DashboardAdmin'));
 
 function App() {
   // Safely initialize user session from localStorage
@@ -82,6 +82,15 @@ function App() {
   useEffect(() => {
     localStorage.setItem('sreeraam_active_page', activePage);
   }, [activePage]);
+
+  // Persist user session in localStorage to preserve login state on refresh
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  }, [currentUser]);
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
@@ -670,7 +679,13 @@ function App() {
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: pageTransitionDur, ease: 'easeInOut' }}
           >
-            {renderActivePage()}
+            <Suspense fallback={
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+                <div className="spinner" />
+              </div>
+            }>
+              {renderActivePage()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>
