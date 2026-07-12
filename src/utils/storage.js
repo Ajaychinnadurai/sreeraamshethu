@@ -46,7 +46,7 @@ function getTableConfig(key) {
   }
   if (key.startsWith('sreeraam_notifications_client_')) {
     const email = key.replace('sreeraam_notifications_client_', '').toLowerCase();
-    return { table: 'notifications', type: 'filtered', filter: { role: 'client', owner_email: email } };
+    return { table: 'notifications', type: 'filtered', filter: { role: 'client', owneremail: email } };
   }
   return null;
 }
@@ -64,15 +64,15 @@ function toDbRow(key, item) {
   }
 
   if (key === 'sreeraam_chat_messages') {
-    if ('clientEmail' in row) row.client_email = row.clientEmail;
-    if ('clientName' in row) row.client_name = row.clientName;
+    if ('clientEmail' in row) row.clientemail = row.clientEmail;
+    if ('clientName' in row) row.clientname = row.clientName;
     delete row.clientEmail;
     delete row.clientName;
   }
 
   if (key === 'sreeraam_notifications_admin' || key.startsWith('sreeraam_notifications_client_')) {
-    if ('ownerEmail' in row) row.owner_email = row.ownerEmail;
-    if ('iconName' in row) row.icon_name = row.iconName;
+    if ('ownerEmail' in row) row.owneremail = row.ownerEmail;
+    if ('iconName' in row) row.iconname = row.iconName;
     delete row.ownerEmail;
     delete row.iconName;
   }
@@ -91,17 +91,17 @@ function fromDbRow(key, row) {
   }
 
   if (key === 'sreeraam_chat_messages') {
-    if ('client_email' in item) item.clientEmail = item.client_email;
-    if ('client_name' in item) item.clientName = item.client_name;
-    delete item.client_email;
-    delete item.client_name;
+    if ('clientemail' in item) item.clientEmail = item.clientemail;
+    if ('clientname' in item) item.clientName = item.clientname;
+    delete item.clientemail;
+    delete item.clientname;
   }
 
   if (key === 'sreeraam_notifications_admin' || key.startsWith('sreeraam_notifications_client_')) {
-    if ('owner_email' in item) item.ownerEmail = item.owner_email;
-    if ('icon_name' in item) item.iconName = item.icon_name;
-    delete item.owner_email;
-    delete item.icon_name;
+    if ('owneremail' in item) item.ownerEmail = item.owneremail;
+    if ('iconname' in item) item.iconName = item.iconname;
+    delete item.owneremail;
+    delete item.iconname;
   }
 
   return item;
