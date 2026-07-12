@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, MapPin, Phone, Award, CheckCircle, ChevronRight, Mail } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
 export default function Home({ onNavigate, onRequestQuote }) {
   // Search state
@@ -21,41 +21,32 @@ export default function Home({ onNavigate, onRequestQuote }) {
   const [divisionsData, setDivisionsData] = useState([]);
 
   useEffect(() => {
-    const loadData = () => {
-      // Load projects
-      const savedProj = localStorage.getItem('sreeraam_projects');
-      if (savedProj) {
-        const parsed = JSON.parse(savedProj);
-        setProjectsData(Array.isArray(parsed) ? parsed : []);
-      } else {
-        const defaults = [
-          { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.' },
-          { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.' },
-          { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Move-in', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.' },
-          { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Move-in', category: 'House Construction', price: 'Ready to Handover', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.' },
-          { id: 5, name: 'Pamban Sea-View Resort Lodge', location: 'Pamban', status: 'Upcoming', category: 'Lodge Construction', price: 'Planning Phase', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=cover&w=800&q=80', type: 'Boutique Lodge Enclave', desc: 'Upcoming double-winged tourist lodge offering direct sea views, modern recreational zones, and structural integrity audits.' },
-          { id: 6, name: 'Temple View Arcade', location: 'Rameswaram', status: 'Completed', category: 'Commercial Civil Build', price: 'Fully Handed Over', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=cover&w=800&q=80', type: 'Commercial Building', desc: 'Premium retail block housing local handicraft stores, complete with heavy-duty structural concrete slabs.' }
-        ];
-        setProjectsData(defaults);
-        saveLocalAndCloud('sreeraam_projects', defaults);
-      }
+    const defaultProj = [
+      { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.' },
+      { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.' },
+      { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Move-in', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.' },
+      { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Move-in', category: 'House Construction', price: 'Ready to Handover', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.' },
+      { id: 5, name: 'Pamban Sea-View Resort Lodge', location: 'Pamban', status: 'Upcoming', category: 'Lodge Construction', price: 'Planning Phase', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=cover&w=800&q=80', type: 'Boutique Lodge Enclave', desc: 'Upcoming double-winged tourist lodge offering direct sea views, modern recreational zones, and structural integrity audits.' },
+      { id: 6, name: 'Temple View Arcade', location: 'Rameswaram', status: 'Completed', category: 'Commercial Civil Build', price: 'Fully Handed Over', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=cover&w=800&q=80', type: 'Commercial Building', desc: 'Premium retail block housing local handicraft stores, complete with heavy-duty structural concrete slabs.' }
+    ];
 
-      // Load divisions
+    const defaultDivs = [
+      { id: 1, title: 'House Construction', desc: 'Bespoke custom homes, family bungalows, and villas designed to withstand local coastal conditions.', bg: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=cover&w=500&q=80' },
+      { id: 2, title: 'Lodge Construction', desc: 'Heavy-duty multi-room tourist lodges, hotels, and layout enclaves built near spiritual hubs.', bg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=500&q=80' },
+      { id: 3, title: 'Commercial Civil Build', desc: 'Reliable office blocks, retail shopping corridors, and foundational structures matching engineering codes.', bg: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=cover&w=500&q=80' },
+      { id: 4, title: 'Interior decoration', desc: 'Fine wood cabinetry, custom modular kitchens, gypsum false ceilings, and premium wall finishes.', bg: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=cover&w=500&q=80' }
+    ];
+
+    const loadData = () => {
+      const savedProj = localStorage.getItem('sreeraam_projects');
+      setProjectsData(savedProj ? safeParseJson(savedProj, []) : defaultProj);
+
       const savedDivs = localStorage.getItem('sreeraam_divisions');
-      if (savedDivs) {
-        const parsedDivs = JSON.parse(savedDivs);
-        setDivisionsData(Array.isArray(parsedDivs) ? parsedDivs : []);
-      } else {
-        const defaults = [
-          { id: 1, title: 'House Construction', desc: 'Bespoke custom homes, family bungalows, and villas designed to withstand local coastal conditions.', bg: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=cover&w=500&q=80' },
-          { id: 2, title: 'Lodge Construction', desc: 'Heavy-duty multi-room tourist lodges, hotels, and layout enclaves built near spiritual hubs.', bg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=500&q=80' },
-          { id: 3, title: 'Commercial Civil Build', desc: 'Reliable office blocks, retail shopping corridors, and foundational structures matching engineering codes.', bg: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=cover&w=500&q=80' },
-          { id: 4, title: 'Interior decoration', desc: 'Fine wood cabinetry, custom modular kitchens, gypsum false ceilings, and premium wall finishes.', bg: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=cover&w=500&q=80' }
-        ];
-        setDivisionsData(defaults);
-        saveLocalAndCloud('sreeraam_divisions', defaults);
-      }
+      setDivisionsData(savedDivs ? safeParseJson(savedDivs, []) : defaultDivs);
     };
+
+    initializeDb('sreeraam_projects', defaultProj);
+    initializeDb('sreeraam_divisions', defaultDivs);
 
     loadData();
     window.addEventListener('sreeraam_db_update', loadData);

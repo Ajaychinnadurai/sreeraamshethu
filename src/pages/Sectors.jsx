@@ -20,7 +20,6 @@ export default function Sectors() {
 
       if (!Array.isArray(parsed)) {
         setDivisions(defaultDivisions);
-        saveLocalAndCloud('sreeraam_divisions', defaultDivisions);
         return;
       }
 
@@ -36,12 +35,10 @@ export default function Sectors() {
         };
       });
 
-      if (JSON.stringify(merged) !== JSON.stringify(parsed)) {
-        saveLocalAndCloud('sreeraam_divisions', merged);
-      }
-
       setDivisions(merged);
     };
+
+    initializeDb('sreeraam_divisions', defaultDivisions);
 
     loadData();
     window.addEventListener('sreeraam_db_update', loadData);

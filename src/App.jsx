@@ -5,7 +5,7 @@ import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
-import { safeParseJson, asArray, saveLocalAndCloud, startDbSync } from './utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb } from './utils/storage';
 
 // Pages
 import Home from './pages/Home';
@@ -50,32 +50,14 @@ function App() {
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [activePage, setActivePage] = useState(initialPage);
 
-  // Seed default client credentials on initial load
+  // Seed default client credentials on initial load safely
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('registeredUsers');
-      const users = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(users)) {
-        if (!users.some(u => u.email.toLowerCase() === 'kumar@mail.com')) {
-          users.push({
-            name: 'Kumar',
-            email: 'kumar@mail.com',
-            phone: '9876543210',
-            password: 'password'
-          });
-          saveLocalAndCloud('registeredUsers', users);
-        }
-      } else {
-        saveLocalAndCloud('registeredUsers', [{
-          name: 'Kumar',
-          email: 'kumar@mail.com',
-          phone: '9876543210',
-          password: 'password'
-        }]);
-      }
-    } catch (e) {
-      console.error('Error seeding default client user:', e);
-    }
+    initializeDb('registeredUsers', [{
+      name: 'Kumar',
+      email: 'kumar@mail.com',
+      phone: '9876543210',
+      password: 'password'
+    }]);
   }, []);
 
   useEffect(() => {

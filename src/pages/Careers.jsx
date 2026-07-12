@@ -10,25 +10,22 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
+    const defaults = [
+      { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
+      { id: 2, title: 'Bespoke Carpenter / Installer', dept: 'Interior decoration', location: 'Rameswaram Office / Site', desc: 'Custom teak wood frame fittings, modular kitchen cabinet installations, and modular wardrobe carpentry works.' },
+      { id: 3, title: 'Structural CAD Drafter', dept: 'Engineering & Design', location: 'Rameswaram Head Office', desc: 'Prepare 2D/3D building plans, structural elevations, and coordinate approval documents with municipal specifications.' }
+    ];
+
     const loadData = () => {
       const savedJobs = localStorage.getItem('sreeraam_careers_jobs');
-      let parsedJobs = [];
-      const raw = safeParseJson(savedJobs, null);
-      if (raw !== null) {
-        parsedJobs = asArray(raw, []);
-      } else {
-        parsedJobs = [
-          { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
-          { id: 2, title: 'Bespoke Carpenter / Installer', dept: 'Interior decoration', location: 'Rameswaram Office / Site', desc: 'Custom teak wood frame fittings, modular kitchen cabinet installations, and modular wardrobe carpentry works.' },
-          { id: 3, title: 'Structural CAD Drafter', dept: 'Engineering & Design', location: 'Rameswaram Head Office', desc: 'Prepare 2D/3D building plans, structural elevations, and coordinate approval documents with municipal specifications.' }
-        ];
-        saveLocalAndCloud('sreeraam_careers_jobs', parsedJobs);
-      }
+      const parsedJobs = savedJobs ? safeParseJson(savedJobs, []) : defaults;
       setJobs(parsedJobs);
       if (parsedJobs.length > 0) {
         setFormData(prev => ({ ...prev, role: parsedJobs[0].title }));
       }
     };
+
+    initializeDb('sreeraam_careers_jobs', defaults);
 
     loadData();
     window.addEventListener('sreeraam_db_update', loadData);

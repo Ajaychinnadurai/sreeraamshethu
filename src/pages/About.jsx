@@ -7,22 +7,19 @@ export default function About() {
   const [milestones, setMilestones] = useState([]);
 
   useEffect(() => {
+    const defaults = [
+      { id: 1, year: 'Engineering Focus', title: 'Solid Academic Foundation', desc: 'Managed by S.M. Sethu Pandian B.E. (Civil Engineering), aligning structural calculation codes with ground reality.' },
+      { id: 2, year: 'Custom Housing', title: 'Local Villa Specialists', desc: 'Established deep expertise in Rameswaram coastal weatherproofing, choosing premium red clay tiles and anti-corrosive concrete reinforcement.' },
+      { id: 3, year: 'Lodge Builds', title: 'Tourist Infrastructure', desc: 'Contracted multi-room lodge structures near Lakshmana Theertham and spiritual pathways, handling licensing and zoning approvals.' },
+      { id: 4, year: 'Complete Decors', title: 'Turnkey Handover', desc: 'Offering modular kitchens, structural false ceilings, and premium carpentry finishes under one single management.' }
+    ];
+
     const loadData = () => {
       const savedMiles = localStorage.getItem('sreeraam_about_milestones');
-      if (savedMiles) {
-        const parsed = JSON.parse(savedMiles);
-        setMilestones(Array.isArray(parsed) ? parsed : []);
-      } else {
-        const defaults = [
-          { id: 1, year: 'Engineering Focus', title: 'Solid Academic Foundation', desc: 'Managed by S.M. Sethu Pandian B.E. (Civil Engineering), aligning structural calculation codes with ground reality.' },
-          { id: 2, year: 'Custom Housing', title: 'Local Villa Specialists', desc: 'Established deep expertise in Rameswaram coastal weatherproofing, choosing premium red clay tiles and anti-corrosive concrete reinforcement.' },
-          { id: 3, year: 'Lodge Builds', title: 'Tourist Infrastructure', desc: 'Contracted multi-room lodge structures near Lakshmana Theertham and spiritual pathways, handling licensing and zoning approvals.' },
-          { id: 4, year: 'Complete Decors', title: 'Turnkey Handover', desc: 'Offering modular kitchens, structural false ceilings, and premium carpentry finishes under one single management.' }
-        ];
-        setMilestones(defaults);
-        saveLocalAndCloud('sreeraam_about_milestones', defaults);
-      }
+      setMilestones(savedMiles ? safeParseJson(savedMiles, []) : defaults);
     };
+
+    initializeDb('sreeraam_about_milestones', defaults);
 
     loadData();
     window.addEventListener('sreeraam_db_update', loadData);
