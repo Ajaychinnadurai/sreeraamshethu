@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ArrowLeft, Filter, Phone, Download, HelpCircle, CheckCircle } from 'lucide-react';
+import { MapPin, ArrowLeft, Filter, Phone, Download, HelpCircle, CheckCircle, Play } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
 export default function Projects() {
@@ -11,18 +11,12 @@ export default function Projects() {
   // Brochure request states
   const [brochureRequested, setBrochureRequested] = useState(false);
   const [brochureEmail, setBrochureEmail] = useState('');
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(-1); // -1 = show image, 0+ = show video
 
   const [projectsData, setProjectsData] = useState([]);
 
   useEffect(() => {
-    const defaults = [
-      { id: 1, name: 'Lakshmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Lakshmana Theertham.', details: 'Lakshmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
-      { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '3,200 Sq. Ft.', units: '3 BHK Dual Floor', rera: 'Panchayat Approved', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.', details: 'Situated on the coastal border of Pamban, this residential custom house build uses specialized anti-corrosive concrete reinforcement to resist salt air. The roof features traditional eco-friendly red clay tiles over a reinforced structural slab, integrating natural cooling layouts.' },
-      { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Handover', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', area: '12,00,0 Sq. Ft.', units: '24 Guest Rooms', rera: 'Municipal Certified', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.', details: 'A completed commercial lodge project offering ready occupancy. Features include high-end ceramic flooring, central ventilation shafts, structural firefighting clearance doors, and dedicated parking allocations for tourist buses.' },
-      { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Handover', category: 'House Construction', price: 'Completed Site', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '2,800 Sq. Ft.', units: '4 BHK Independent', rera: 'Approved Plan', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.', details: 'This custom house project incorporates fine interior decoration works. Finished with teak wood frame work, modular granite counter kitchen, fall ceilings with integrated LED lighting, and high-quality premium paint coat.' },
-      { id: 5, name: 'Pamban Sea-View Resort Lodge', location: 'Pamban', status: 'Upcoming', category: 'Lodge Construction', price: 'Planning Phase', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=cover&w=800&q=80', type: 'Boutique Lodge Enclave', area: '15,000 Sq. Ft.', units: '30 Deluxe Rooms', rera: 'Approvals Pending', desc: 'Upcoming double-winged tourist lodge offering direct sea views, modern recreational zones, and structural integrity audits.', details: 'An upcoming luxury lodge project in Pamban. Engineered with specialized deep pile foundations to address seaside soil shifting, it features structural balconies and expansive dining lounges.' },
-      { id: 6, name: 'Temple View Arcade', location: 'Rameswaram', status: 'Completed', category: 'Commercial Civil Build', price: 'Fully Handed Over', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=cover&w=800&q=80', type: 'Commercial Building', desc: 'Premium retail block housing local handicraft stores, complete with heavy-duty structural concrete slabs.', details: 'A fully delivered commercial building civil construction. The block includes modular retail shutters, heavy-duty electrical wiring panels, and a high-load concrete terrace floor optimized for future vertical expansion.' }
-    ];
+    const defaults = [];
 
     const loadData = () => {
       const savedProj = localStorage.getItem('sreeraam_projects');
@@ -50,6 +44,32 @@ export default function Projects() {
   const handleBrochureSubmit = (e) => {
     e.preventDefault();
     if (!brochureEmail) return;
+
+    // Save inquiry so admin can follow up
+    const inquiries = asArray(safeParseJson(localStorage.getItem('sreeraam_inquiries'), []), []);
+    inquiries.push({
+      id: Date.now(),
+      name: brochureEmail.split('@')[0] || 'Website Visitor',
+      phone: brochureEmail,
+      project: selectedProject ? selectedProject.name : 'Project Details Request',
+      message: `Requested project details for ${selectedProject ? selectedProject.name : 'an unspecified project'}. Email: ${brochureEmail}`,
+      date: 'Just now'
+    });
+    saveLocalAndCloud('sreeraam_inquiries', inquiries);
+
+    // Save persistent admin notification
+    const adminNotifs = asArray(safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []), []);
+    adminNotifs.unshift({
+      id: Date.now() + Math.random(),
+      iconName: 'mail',
+      title: 'Project Detail Request',
+      message: `${brochureEmail} requested brochure for ${selectedProject ? selectedProject.name : 'a project'}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: 'Just now',
+      read: false
+    });
+    saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
+
     setBrochureRequested(true);
     setTimeout(() => {
       setBrochureRequested(false);
@@ -76,7 +96,7 @@ export default function Projects() {
             textAlign: 'left'
           }}
         >
-          {/* Gallery / Image Frame */}
+          {/* Gallery / Image Frame with Video Support */}
           <div>
             <div
               style={{
@@ -87,14 +107,79 @@ export default function Projects() {
                 marginBottom: '20px'
               }}
             >
-              <img
-                src={selectedProject.image}
-                alt={selectedProject.name}
-                style={{ width: '100%', height: '400px', objectFit: 'cover' }}
-              />
+              {/* Show video if selected, otherwise show image */}
+              {selectedVideoIndex >= 0 && selectedProject.videos && selectedProject.videos.length > 0 && selectedProject.videos[selectedVideoIndex] ? (
+                <div style={{ position: 'relative', width: '100%', height: '400px', background: '#000' }}>
+                  <iframe
+                    src={selectedProject.videos[selectedVideoIndex]}
+                    title={`${selectedProject.name} Video ${selectedVideoIndex + 1}`}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 'none' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <img
+                  src={selectedProject.image}
+                  alt={selectedProject.name}
+                  style={{ width: '100%', height: '400px', objectFit: 'cover' }}
+                />
+              )}
               <span className={`vgn-badge bg-${selectedProject.status.toLowerCase().replace(/\s+/g, '-')}`}>
                 {selectedProject.status}
               </span>
+            </div>
+
+            {/* Media switcher: show image + video thumbnails */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {/* Image thumbnail */}
+              <div
+                onClick={() => setSelectedVideoIndex(-1)}
+                style={{
+                  width: '80px',
+                  height: '56px',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  border: selectedVideoIndex === -1 ? '3px solid var(--vgn-gold)' : '2px solid var(--gray-200)',
+                  opacity: selectedVideoIndex === -1 ? 1 : 0.6,
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
+                }}
+              >
+                <img src={selectedProject.image} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              {/* Video thumbnails */}
+              {selectedProject.videos && selectedProject.videos.map((url, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedVideoIndex(idx)}
+                  style={{
+                    position: 'relative',
+                    width: '80px',
+                    height: '56px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: selectedVideoIndex === idx ? '3px solid var(--vgn-gold)' : '2px solid var(--gray-200)',
+                    opacity: selectedVideoIndex === idx ? 1 : 0.6,
+                    transition: 'all 0.2s ease',
+                    background: '#1A1A2E',
+                    flexShrink: 0
+                  }}
+                >
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)">
+                      <polygon points="6,4 20,12 6,20" />
+                    </svg>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: '2px', right: '4px', fontSize: '8px', color: 'rgba(255,255,255,0.7)', fontWeight: '700', background: 'rgba(0,0,0,0.5)', padding: '0 3px', borderRadius: '2px' }}>
+                    {idx + 1}
+                  </div>
+                </div>
+              ))}
             </div>
             
             {/* Quick specifications box */}
@@ -301,6 +386,29 @@ export default function Projects() {
                     alt={project.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
+                  {project.videos && project.videos.length > 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'rgba(26,26,46,0.8)',
+                        border: '2px solid var(--vgn-gold)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--vgn-gold)',
+                        pointerEvents: 'none',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                      }}
+                    >
+                      <Play size={16} fill="var(--vgn-gold)" style={{ marginLeft: '2px' }} />
+                    </div>
+                  )}
                   <span className={`vgn-badge bg-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
                     {project.status === 'Ready to Move-in' ? 'Ready to Handover' : project.status}
                   </span>

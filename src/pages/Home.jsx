@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, MapPin, Phone, Award, CheckCircle, ChevronRight, Mail } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
@@ -70,21 +70,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
   const [divisionsData, setDivisionsData] = useState([]);
 
   useEffect(() => {
-    const defaultProj = [
-      { id: 1, name: 'Laxmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Laxmana Theertham.' },
-      { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.' },
-      { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Move-in', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.' },
-      { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Move-in', category: 'House Construction', price: 'Ready to Handover', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.' },
-      { id: 5, name: 'Pamban Sea-View Resort Lodge', location: 'Pamban', status: 'Upcoming', category: 'Lodge Construction', price: 'Planning Phase', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=cover&w=800&q=80', type: 'Boutique Lodge Enclave', desc: 'Upcoming double-winged tourist lodge offering direct sea views, modern recreational zones, and structural integrity audits.' },
-      { id: 6, name: 'Temple View Arcade', location: 'Rameswaram', status: 'Completed', category: 'Commercial Civil Build', price: 'Fully Handed Over', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=cover&w=800&q=80', type: 'Commercial Building', desc: 'Premium retail block housing local handicraft stores, complete with heavy-duty structural concrete slabs.' }
-    ];
-
-    const defaultDivs = [
-      { id: 1, title: 'House Construction', desc: 'Bespoke custom homes, family bungalows, and villas designed to withstand local coastal conditions.', bg: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=cover&w=500&q=80' },
-      { id: 2, title: 'Lodge Construction', desc: 'Heavy-duty multi-room tourist lodges, hotels, and layout enclaves built near spiritual hubs.', bg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=500&q=80' },
-      { id: 3, title: 'Commercial Civil Build', desc: 'Reliable office blocks, retail shopping corridors, and foundational structures matching engineering codes.', bg: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=cover&w=500&q=80' },
-      { id: 4, title: 'Interior decoration', desc: 'Fine wood cabinetry, custom modular kitchens, gypsum false ceilings, and premium wall finishes.', bg: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=cover&w=500&q=80' }
-    ];
+    const defaultProj = [];
+    const defaultDivs = [];
 
     const loadData = () => {
       const savedProj = localStorage.getItem('sreeraam_projects');
@@ -158,23 +145,45 @@ export default function Home({ onNavigate, onRequestQuote }) {
     .slice()
     .sort((a, b) => b.id - a.id);
 
-  // Video Background Cycler with preloading
+  // Video Background Cycler with smooth transitions
   const heroVideos = ['/videos/bg_video1.mp4', '/videos/bg_video2.mp4'];
   const [videoIndex, setVideoIndex] = useState(0);
-  // Track which videos have buffered enough to show (by index)
+  const videoRefs = useRef([]);
   const [readyVideos, setReadyVideos] = useState(new Set());
 
   const handleVideoCanPlay = (i) => {
     setReadyVideos(prev => new Set([...prev, i]));
   };
 
-  // Cycle video every 12 seconds
+  // When a video finishes naturally, cycle to the next
+  const handleVideoEnded = () => {
+    setVideoIndex(prev => (prev + 1) % heroVideos.length);
+  };
+
+  // Control playback: play the active video from start, pause others
   useEffect(() => {
-    const timer = setInterval(() => {
-      setVideoIndex(prev => (prev + 1) % heroVideos.length);
-    }, 12000);
-    return () => clearInterval(timer);
-  }, []);
+    heroVideos.forEach((_, i) => {
+      const el = videoRefs.current[i];
+      if (!el) return;
+      if (i === videoIndex) {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      } else {
+        el.pause();
+      }
+    });
+  }, [videoIndex]);
+
+  // Cinematic initial reveal: when first video is ready, trigger a slow zoom+fade
+  const [initialRevealDone, setInitialRevealDone] = useState(false);
+
+  useEffect(() => {
+    if (readyVideos.has(0) && !initialRevealDone) {
+      // Let the CSS animation play for ~3s, then switch to standard transitions
+      const timer = setTimeout(() => setInitialRevealDone(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [readyVideos, initialRevealDone]);
 
   // ── LAYOUT B: Conversion-Focused Variant ──
   const renderLayoutB = () => (
@@ -200,13 +209,14 @@ export default function Home({ onNavigate, onRequestQuote }) {
           {heroVideos.map((src, i) => (
             <video
               key={src}
+              ref={el => (videoRefs.current[i] = el)}
               src={src}
               preload="auto"
               muted
               playsInline
-              loop
-              autoPlay={i === videoIndex}
               onCanPlay={() => handleVideoCanPlay(i)}
+              onEnded={handleVideoEnded}
+              className={i === 0 && !initialRevealDone && readyVideos.has(0) ? 'video-initial-reveal-b' : ''}
               style={{
                 position: 'absolute',
                 top: 0, left: 0,
@@ -215,7 +225,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
                 objectFit: 'cover',
                 objectPosition: 'center',
                 opacity: i === videoIndex && readyVideos.has(i) ? 0.45 : 0,
-                transition: 'opacity 1.5s ease-in-out',
+                transform: 'scale(1)',
+                transition: initialRevealDone ? 'opacity 2s ease-in-out' : 'none',
                 pointerEvents: 'none'
               }}
             />
@@ -683,13 +694,14 @@ export default function Home({ onNavigate, onRequestQuote }) {
           {heroVideos.map((src, i) => (
             <video
               key={src}
+              ref={el => (videoRefs.current[i] = el)}
               src={src}
               preload="auto"
               muted
               playsInline
-              loop
-              autoPlay={i === videoIndex}
               onCanPlay={() => handleVideoCanPlay(i)}
+              onEnded={handleVideoEnded}
+              className={i === 0 && !initialRevealDone && readyVideos.has(0) ? 'video-initial-reveal' : ''}
               style={{
                 position: 'absolute',
                 top: 0, left: 0,
@@ -698,7 +710,8 @@ export default function Home({ onNavigate, onRequestQuote }) {
                 objectFit: 'cover',
                 objectPosition: 'center',
                 opacity: i === videoIndex && readyVideos.has(i) ? 0.55 : 0,
-                transition: 'opacity 1.5s ease-in-out',
+                transform: 'scale(1)',
+                transition: initialRevealDone ? 'opacity 2s ease-in-out' : 'none',
                 pointerEvents: 'none'
               }}
             />

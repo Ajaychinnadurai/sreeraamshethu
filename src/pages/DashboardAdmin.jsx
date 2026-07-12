@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Mail, ClipboardCheck, ArrowUpRight, MessageCircle, Plus, Edit2, Trash2, Save, X, Info, Bell, Search, ArrowUpDown, Send } from 'lucide-react';
 import ProfileButton from '../components/ProfileButton';
 import { saveLocalAndCloud, safeParseJson } from '../utils/storage';
+import { playNotificationSound } from '../utils/sound';
+import ToastNotification from '../components/ToastNotification';
 
 function EmptyState({ icon, title, subtitle }) {
   return (
@@ -42,12 +44,29 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
   const notificationPanelRef = useRef(null);
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const addToast = (notification, { silent = false } = {}) => {
+    const id = ++toastIdCounter.current;
+    setToasts(prev => [...prev, { id, ...notification, timestamp: Date.now() }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+    if (!silent) {
+      playNotificationSound();
+    }
+  };
+
   const addNotification = (item) => {
     const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const newNotif = { id: Date.now() + Math.random(), read: false, ...item };
     const updated = [newNotif, ...saved];
     saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
+    // Show toast + play sound for new notification
+    addToast({
+      iconName: item.iconName || 'bell',
+      title: item.title || 'New Notification',
+      message: item.message || ''
+    });
   };
 
   const markAllRead = () => {
@@ -93,14 +112,6 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showNotifications]);
-
-  const showToast = (message, type = 'success') => {
-    const id = ++toastIdCounter.current;
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
-  };
 
   // -------------------- CRUD DATABASES --------------------
   const [clients, setClients] = useState([]);
@@ -209,35 +220,11 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
   const [editingItem, setEditingItem] = useState(null); // holds project, division, job, or milestone structure
   const [isAdding, setIsAdding] = useState(false);
 
-  // Default seed databases (same as pages)
-  const defaultProjects = [
-    { id: 1, name: 'Lakshmana Residency Lodge', location: 'Rameswaram', status: 'Ongoing', category: 'Lodge Construction', price: 'Premium Commercial Fit', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=cover&w=800&q=80', type: 'Modern Lodge & Guest House', area: '8,500 Sq. Ft. Built-up', units: '18 Rooms + Lounge', rera: 'Local Municipal Approved', desc: 'Multistory lodge construction featuring standard Dravidian columns base and high-strength concrete framing near Lakshmana Theertham.', details: 'Lakshmana Residency Lodge is strategically designed to accommodate seasonal pilgrims. Situated in the heart of Rameswaram, it is engineered for multi-story load bearing capacity with localized Dravidian structural columns. Features include concrete framing, energy-saving plumbing lines, and rainwater storage tanks.' },
-    { id: 2, name: 'Sethu Coastal Villa Enclave', location: 'Pamban', status: 'Ongoing', category: 'House Construction', price: 'High-Quality Civil Build', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '3,200 Sq. Ft.', units: '3 BHK Dual Floor', rera: 'Panchayat Approved', desc: 'Seaside luxury villas constructed using premium local red clay roof tiles and wind-resistant framing structures.', details: 'Situated on the coastal border of Pamban, this residential custom house build uses specialized anti-corrosive concrete reinforcement to resist salt air. The roof features traditional eco-friendly red clay tiles over a reinforced structural slab, integrating natural cooling layouts.' },
-    { id: 3, name: 'Rameswaram Tourist Lodge Complex', location: 'Rameswaram', status: 'Ready to Handover', category: 'Lodge Construction', price: 'Completed Turnkey Project', image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=cover&w=800&q=80', type: 'Commercial Lodges', area: '12,00,0 Sq. Ft.', units: '24 Guest Rooms', rera: 'Municipal Certified', desc: 'Finished premium lodge suites offering spacious ventilation, safety compliance, and parking layouts.', details: 'A completed commercial lodge project offering ready occupancy. Features include high-end ceramic flooring, central ventilation shafts, structural firefighting clearance doors, and dedicated parking allocations for tourist buses.' },
-    { id: 4, name: 'Thulasi Baba Mansion', location: 'Rameswaram', status: 'Ready to Handover', category: 'House Construction', price: 'Completed Site', image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=cover&w=800&q=80', type: 'Custom House Builds', area: '2,800 Sq. Ft.', units: '4 BHK Independent', rera: 'Approved Plan', desc: 'Double story signature bungalow featuring premium teak wood entryways and modern modular layout specs.', details: 'This custom house project incorporates fine interior decoration works. Finished with teak wood frame work, modular granite counter kitchen, fall ceilings with integrated LED lighting, and high-quality premium paint coat.' },
-    { id: 5, name: 'Pamban Sea-View Resort Lodge', location: 'Pamban', status: 'Upcoming', category: 'Lodge Construction', price: 'Planning Phase', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=cover&w=800&q=80', type: 'Boutique Lodge Enclave', area: '15,000 Sq. Ft.', units: '30 Deluxe Rooms', rera: 'Approvals Pending', desc: 'Upcoming double-winged tourist lodge offering direct sea views, modern recreational zones, and structural integrity audits.', details: 'An upcoming luxury lodge project in Pamban. Engineered with specialized deep pile foundations to address seaside soil shifting, it features structural balconies and expansive dining lounges.' },
-    { id: 6, name: 'Temple View Arcade', location: 'Rameswaram', status: 'Completed', category: 'Commercial Civil Build', price: 'Fully Handed Over', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=cover&w=800&q=80', type: 'Commercial Building', area: '6,400 Sq. Ft.', units: '8 Retail Outlets', rera: 'Municipal Approved', desc: 'Premium retail block housing local handicraft stores, complete with heavy-duty structural concrete slabs.', details: 'A fully delivered commercial building civil construction. The block includes modular retail shutters, heavy-duty electrical wiring panels, and a high-load concrete terrace floor optimized for future vertical expansion.' }
-  ];
-
-  const defaultDivisions = [
-    { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },
-    { id: 2, title: 'Lodge Construction', metrics: 'Commercial Guest Houses & Lodges', desc: 'Expert construction of tourist lodges and guest houses near Rameswaram temple corridors. We coordinate plan approvals, safety certifications, and room layout optimization.', services: ['Multi-room tourist lodge planning', 'Municipal building approval coordination', 'Heavy-duty load bearing civil concrete', 'Commercial plumbing & ventilation setups'] },
-    { id: 3, title: 'Commercial Civil Build', metrics: 'Office & Retail Shopping Blocks', desc: 'Constructing commercial centers, retail outlets, and multi-purpose properties. Focused on solid foundations, safety clearances, and durable building envelopes.', services: ['Reinforced concrete column arrays', 'Heavy electrical wiring conduit planning', 'Fire-safe building code compliance', 'High-density concrete floor installations'] },
-    { id: 4, title: 'Interior decoration', metrics: 'Premium Modular & Wood Styling', desc: 'Custom wooden cabinetry, modular kitchens, fall ceilings, and high-quality paint coatings to deliver completed elegant living spaces.', services: ['Premium granite modular kitchen setups', 'Teak wood main entry frame installations', 'Bespoke walk-in wardrobes & cabinetry', 'Modern gypsum board false ceilings & lights'] }
-  ];
-
-  const defaultMilestones = [
-    { id: 1, year: 'Engineering Focus', title: 'Solid Academic Foundation', desc: 'Managed by S.M. Sethu Pandian B.E. (Civil Engineering), aligning structural calculation codes with ground reality.' },
-    { id: 2, year: 'Custom Housing', title: 'Local Villa Specialists', desc: 'Established deep expertise in Rameswaram coastal weatherproofing, choosing premium red clay tiles and anti-corrosive concrete reinforcement.' },
-    { id: 3, year: 'Lodge Builds', title: 'Tourist Infrastructure', desc: 'Contracted multi-room lodge structures near Lakshmana Theertham and spiritual pathways, handling licensing and zoning approvals.' },
-    { id: 4, year: 'Complete Decors', title: 'Turnkey Handover', desc: 'Offering modular kitchens, structural false ceilings, and premium carpentry finishes under one single management.' }
-  ];
-
-  const defaultCareers = [
-    { id: 1, title: 'Site Construction Supervisor', dept: 'Civil Construction', location: 'Rameswaram Site', desc: 'Oversee concrete foundation laying, reinforcement welding quality checks, and manage masonry work schedules.' },
-    { id: 2, title: 'Bespoke Carpenter / Installer', dept: 'Interior decoration', location: 'Rameswaram Office / Site', desc: 'Custom teak wood frame fittings, modular kitchen cabinet installations, and modular wardrobe carpentry works.' },
-    { id: 3, title: 'Structural CAD Drafter', dept: 'Engineering & Design', location: 'Rameswaram Head Office', desc: 'Prepare 2D/3D building plans, structural elevations, and coordinate approval documents with municipal specifications.' }
-  ];
+  // Default seed databases (empty — admin adds data through CRUD forms)
+  const defaultProjects = [];
+  const defaultDivisions = [];
+  const defaultMilestones = [];
+  const defaultCareers = [];
 
   // -------------------- LIFECYCLE --------------------
   // -------------------- LIFECYCLE --------------------
@@ -353,7 +340,11 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
     setter(data);
     setEditingItem(null);
     setIsAdding(false);
-    showToast(successMsg);
+    addToast({
+      iconName: 'check',
+      title: 'Success',
+      message: successMsg
+    }, { silent: true });
   };
 
   // -------------------- INQUIRIES ACTIONS --------------------
@@ -388,6 +379,7 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
       rera: 'Pending approval',
       desc: '',
       details: '',
+      videos: [],
       typeField: 'project' // identify type
     });
     setIsAdding(true);
@@ -1530,6 +1522,62 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
                     </div>
                   </div>
 
+                  {/* PROJECT VIDEOS */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--vgn-blue-dark)', marginBottom: '5px' }}>PROJECT VIDEOS (one URL per line)</label>
+
+                    {/* Video previews */}
+                    {editingItem.videos && editingItem.videos.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                        {editingItem.videos.map((videoUrl, idx) => (
+                          <div key={idx} style={{ position: 'relative', width: '140px', height: '90px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--gray-200)' }}>
+                            <video
+                              src={videoUrl}
+                              muted
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--vgn-gold)">
+                                <polygon points="6,4 20,12 6,20" />
+                              </svg>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const copy = [...editingItem.videos];
+                                copy.splice(idx, 1);
+                                setEditingItem({ ...editingItem, videos: copy });
+                              }}
+                              style={{
+                                position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: 'var(--white)',
+                                border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', cursor: 'pointer', fontSize: '10px', lineHeight: 1
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <textarea
+                      rows="3"
+                      className="vgn-input"
+                      placeholder="https://www.youtube.com/embed/VIDEO_ID
+https://player.vimeo.com/video/VIDEO_ID"
+                      value={(editingItem.videos || []).join('\n')}
+                      onChange={(e) => {
+                        const urls = e.target.value.split('\n').filter(u => u.trim());
+                        setEditingItem({ ...editingItem, videos: urls });
+                      }}
+                      style={{ resize: 'vertical', padding: '10px', fontFamily: 'monospace', fontSize: '12px' }}
+                    />
+                    <p style={{ fontSize: '10px', color: 'var(--gray-400)', marginTop: '4px' }}>
+                      Enter embed URLs for YouTube or Vimeo (one per line). Preview thumbnails shown above.
+                    </p>
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--vgn-blue-dark)', marginBottom: '5px' }}>SHORT BRIEF</label>
                     <textarea
@@ -1746,70 +1794,8 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
       </div>
     </motion.div>
 
-      {/* Toast Notification Container */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          pointerEvents: 'none'
-        }}
-      >
-        <AnimatePresence>
-          {toasts.map(toast => (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, x: 80, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 80, scale: 0.9 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                pointerEvents: 'auto',
-                background: toast.type === 'success' ? 'var(--vgn-gold)' : '#ef4444',
-                color: '#fff',
-                padding: '12px 20px',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: '600',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                maxWidth: '320px',
-                backdropFilter: 'blur(4px)'
-              }}
-            >
-              <span>{toast.message}</span>
-              <button
-                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: 'none',
-                  color: '#fff',
-                  borderRadius: '50%',
-                  width: '20px',
-                  height: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  lineHeight: 1,
-                  padding: 0,
-                  marginLeft: 'auto',
-                  flexShrink: 0
-                }}
-              >
-                &times;
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* New-style toast notifications */}
+      <ToastNotification toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
     </div>
   );
 }

@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell } from 'lucide-react';
+import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, Edit3, Trash2, Mail as MailIcon, Users as UsersIcon } from 'lucide-react';
 import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
-import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb } from './utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb, supabase } from './utils/storage';
+import { playNotificationSound } from './utils/sound';
+import ToastNotification from './components/ToastNotification';
+import QuickReplyBar from './components/QuickReplyBar';
+import ChatAttachment from './components/ChatAttachment';
+import { formatMessageText, renderFormattedParts } from './utils/chatUtils.jsx';
+import TypingIndicator from './components/TypingIndicator';
+import MessageReactions from './components/MessageReactions';
 import { registerAbTestDebugShortcut } from './utils/abTest';
 import { identifyUser, resetUser, trackEvent } from './utils/posthog';
 
@@ -63,12 +70,7 @@ function App() {
     initializeDb('sreeraam_chat_messages', []);
     initializeDb('sreeraam_notifications_admin', []);
 
-    initializeDb('registeredUsers', [{
-      name: 'Kumar',
-      email: 'kumar@mail.com',
-      phone: '9876543210',
-      password: 'password'
-    }]);
+    initializeDb('registeredUsers', []);
   }, []);
 
   useEffect(() => {
@@ -96,19 +98,123 @@ function App() {
   const [clientNewMsg, setClientNewMsg] = useState('');
   const [clientInquiryStatus, setClientInquiryStatus] = useState(false);
   const [isClientChatOpen, setIsClientChatOpen] = useState(false);
+  const [clientAttachment, setClientAttachment] = useState(null);
+  const [adminAttachment, setAdminAttachment] = useState(null);
+  const [showClientQuickReplies, setShowClientQuickReplies] = useState(true);
+  const [toasts, setToasts] = useState([]);
+  const toastIdCounter = useRef(0);
+  const prevNotifCount = useRef(0);
+
+  const addToast = (notification) => {
+    const id = ++toastIdCounter.current;
+    setToasts(prev => [...prev, { id, ...notification, timestamp: Date.now() }]);
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+    // Play the notification sound
+    playNotificationSound();
+  };
+
+  // Detect new notifications and pop a toast
+  useEffect(() => {
+    if (prevNotifCount.current > 0 && clientNotifications.length > prevNotifCount.current) {
+      const newNotifs = clientNotifications.slice(0, clientNotifications.length - prevNotifCount.current);
+      newNotifs.forEach(n => {
+        if (!n.read) {
+          addToast({
+            iconName: n.iconName || 'bell',
+            title: n.title || 'New Notification',
+            message: n.message || ''
+          });
+        }
+      });
+    }
+    prevNotifCount.current = clientNotifications.length;
+  }, [clientNotifications]);
 
   // Admin Floating Chat states
   const [allMessages, setAllMessages] = useState([]);
   const [selectedAdminClientEmail, setSelectedAdminClientEmail] = useState(null);
   const [adminReplyText, setAdminReplyText] = useState('');
+
+  // Typing indicators state (broadcasted over Realtime Channel)
+  const [adminIsTyping, setAdminIsTyping] = useState(false);
+  const [clientIsTyping, setClientIsTyping] = useState({}); // clientEmail -> boolean
+
+  const typingChannelRef = useRef(null);
+
+  // Broadcast typing status to other participants
+  const sendTypingStatus = (isTyping, targetEmail = null) => {
+    if (typingChannelRef.current && supabase) {
+      typingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: {
+          email: currentUser.email,
+          role: currentUser.role,
+          isTyping,
+          targetEmail
+        }
+      });
+    }
+  };
+
+  // Realtime Broadcast Listener for typing status
+  useEffect(() => {
+    if (!currentUser || !supabase) return;
+
+    const channel = supabase.channel('chat-typing');
+    channel
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        const { email, role, isTyping, targetEmail } = payload;
+        if (role === 'admin' && currentUser.role === 'client') {
+          if (targetEmail?.toLowerCase() === currentUser.email.toLowerCase()) {
+            setAdminIsTyping(isTyping);
+          }
+        } else if (role === 'client' && currentUser.role === 'admin') {
+          setClientIsTyping(prev => ({ ...prev, [email.toLowerCase()]: isTyping }));
+        }
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [currentUser]);
+
+  // Broadcast admin typing status
+  useEffect(() => {
+    if (currentUser?.role !== 'admin' || !selectedAdminClientEmail) return;
+    const isTyping = adminReplyText.trim().length > 0;
+    sendTypingStatus(isTyping, selectedAdminClientEmail);
+  }, [adminReplyText, selectedAdminClientEmail, currentUser]);
+
+  // Broadcast client typing status
+  useEffect(() => {
+    if (currentUser?.role !== 'client') return;
+    const isTyping = clientNewMsg.trim().length > 0;
+    sendTypingStatus(isTyping);
+  }, [clientNewMsg, currentUser]);
   const adminChatContainerRef = useRef(null);
+  const clientChatContainerRef = useRef(null);
 
   // Auto-scroll admin chat locally
   useEffect(() => {
     if (adminChatContainerRef.current) {
       adminChatContainerRef.current.scrollTop = adminChatContainerRef.current.scrollHeight;
     }
-  }, [selectedAdminClientEmail, allMessages]);
+  }, [selectedAdminClientEmail, allMessages, isClientChatOpen]);
+
+  // Auto-scroll client chat locally
+  useEffect(() => {
+    if (clientChatContainerRef.current) {
+      clientChatContainerRef.current.scrollTop = clientChatContainerRef.current.scrollHeight;
+    }
+  }, [clientMessages, isClientChatOpen]);
 
   // Start background database sync loop
   useEffect(() => {
@@ -187,17 +293,27 @@ function App() {
     setClientNotifications(updated);
   };
 
-  const handleClientSendMessage = (e) => {
-    e.preventDefault();
-    if (!clientNewMsg.trim() || clientInquiryStatus || !currentUser) return;
+  const handleQuickReplySend = (text) => {
+    if (!currentUser) return;
+    setClientNewMsg(text);
+    // Auto-send after a brief delay for the input to update
+    setTimeout(() => {
+      sendMessage(text, false);
+    }, 50);
+  };
+
+  const sendMessage = (text, hasAttachment) => {
+    if (!text.trim() || clientInquiryStatus || !currentUser) return;
     const msg = {
       id: Date.now(),
       sender: 'client',
       clientEmail: currentUser.email,
       clientName: currentUser.name,
-      text: clientNewMsg.trim(),
-      time: 'Just now'
+      text: text.trim(),
+      time: 'Just now',
+      attachment: hasAttachment && clientAttachment ? { ...clientAttachment } : null
     };
+
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(msg);
     saveLocalAndCloud('sreeraam_chat_messages', all);
@@ -209,7 +325,7 @@ function App() {
       id: Date.now() + Math.random(),
       iconName: 'message',
       title: 'New Client Message',
-      message: `${currentUser.name}: ${clientNewMsg.trim().substring(0, 60)}${clientNewMsg.trim().length > 60 ? '...' : ''}`,
+      message: `${currentUser.name}: ${text.trim().substring(0, 60)}${text.trim().length > 60 ? '...' : ''}`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: 'Just now',
       read: false
@@ -217,9 +333,11 @@ function App() {
     saveLocalAndCloud('sreeraam_notifications_admin', adminNotifs);
 
     setClientNewMsg('');
+    setClientAttachment(null);
     setClientInquiryStatus(true);
+    setShowClientQuickReplies(false);
 
-     // Simulate auto-reply
+    // Simulate auto-reply
     setTimeout(() => {
       const current = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
       const hasAutoReplied = current.some(m => m.clientEmail === currentUser.email && m.text.includes('S.M. Sethu Pandian B.E. will review your note'));
@@ -236,7 +354,6 @@ function App() {
         saveLocalAndCloud('sreeraam_chat_messages', current);
         setClientMessages(prev => [...prev, reply]);
 
-        // Save client notification locally
         const key = `sreeraam_notifications_client_${currentUser.email.toLowerCase()}`;
         const clientNotifs = asArray(safeParseJson(localStorage.getItem(key), []), []);
         clientNotifs.unshift({
@@ -251,7 +368,15 @@ function App() {
         setClientNotifications(clientNotifs);
       }
       setClientInquiryStatus(false);
+      // Re-enable quick replies after auto-reply
+      setTimeout(() => setShowClientQuickReplies(true), 2000);
     }, 3000);
+  };
+
+  const handleClientSendMessage = (e) => {
+    e.preventDefault();
+    if (!clientNewMsg.trim() || clientInquiryStatus || !currentUser) return;
+    sendMessage(clientNewMsg, !!clientAttachment);
   };
 
   // Group client threads for Admin chat
@@ -287,6 +412,70 @@ function App() {
     }
   }, [isClientChatOpen, currentUser]);
 
+  const MSG_EDIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const isWithinEditWindow = (msgId) => {
+    const age = Date.now() - (typeof msgId === 'number' ? msgId : 0);
+    return age < MSG_EDIT_WINDOW_MS;
+  };
+
+  const handleEditMessage = (messageId, newText) => {
+    if (!newText.trim() || !currentUser) return;
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
+    const updated = all.map(m => {
+      if (m.id !== messageId) return m;
+      return { ...m, text: newText.trim(), edited: true, editedAt: Date.now() };
+    });
+    saveLocalAndCloud('sreeraam_chat_messages', updated);
+    setAllMessages(updated);
+    if (currentUser.role === 'client') {
+      setClientMessages(updated.filter(m => m.clientEmail === currentUser.email));
+    }
+    setEditingMessageId(null);
+    setEditText('');
+  };
+
+  const handleDeleteMessage = (messageId) => {
+    if (!currentUser) return;
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
+    const updated = all.map(m => {
+      if (m.id !== messageId) return m;
+      return { ...m, deleted: true, text: '', attachment: null };
+    });
+    saveLocalAndCloud('sreeraam_chat_messages', updated);
+    setAllMessages(updated);
+    if (currentUser.role === 'client') {
+      setClientMessages(updated.filter(m => m.clientEmail === currentUser.email));
+    }
+  };
+
+  const handleToggleReaction = (messageId, emoji) => {
+    if (!currentUser) return;
+    const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
+    const updated = all.map(m => {
+      if (m.id !== messageId) return m;
+      const reactions = { ...(m.reactions || {}) };
+      const users = [...(reactions[emoji] || [])];
+      const userIdx = users.findIndex(u => u.toLowerCase() === currentUser.email.toLowerCase());
+      if (userIdx >= 0) {
+        users.splice(userIdx, 1);
+        if (users.length === 0) delete reactions[emoji];
+        else reactions[emoji] = users;
+      } else {
+        reactions[emoji] = [...(reactions[emoji] || []), currentUser.email];
+      }
+      return { ...m, reactions };
+    });
+    saveLocalAndCloud('sreeraam_chat_messages', updated);
+    setAllMessages(updated);
+    if (currentUser.role === 'client') {
+      setClientMessages(updated.filter(m => m.clientEmail === currentUser.email));
+    }
+  };
+
   const handleSelectAdminThread = (email) => {
     setSelectedAdminClientEmail(email);
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
@@ -297,19 +486,23 @@ function App() {
 
   const handleAdminSendMessage = (e) => {
     e.preventDefault();
-    if (!adminReplyText.trim() || !selectedAdminClientEmail || !currentUser) return;
+    if ((!adminReplyText.trim() && !adminAttachment) || !selectedAdminClientEmail || !currentUser) return;
     const reply = {
       id: Date.now(),
       sender: 'admin',
       clientEmail: selectedAdminClientEmail,
       clientName: currentThread?.clientName || 'Client',
-      text: adminReplyText.trim(),
-      time: 'Just now'
+      text: adminReplyText.trim() || '(Attachment)',
+      time: 'Just now',
+      attachment: adminAttachment ? { ...adminAttachment } : null
     };
     const all = asArray(safeParseJson(localStorage.getItem('sreeraam_chat_messages'), []), []);
     all.push(reply);
     saveLocalAndCloud('sreeraam_chat_messages', all);
     setAllMessages(all);
+
+    // Clear typing indicator
+    saveLocalAndCloud('sreeraam_typing_admin', { timestamp: 0 });
 
     // Save client notification locally so client is notified in their header bell
     const clientKey = `sreeraam_notifications_client_${selectedAdminClientEmail.toLowerCase()}`;
@@ -326,6 +519,7 @@ function App() {
     saveLocalAndCloud(clientKey, clientNotifs);
 
     setAdminReplyText('');
+    setAdminAttachment(null);
   };
 
   const [animSpeed, setAnimSpeed] = useState(() => {
@@ -348,8 +542,7 @@ function App() {
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authKey, setAuthKey] = useState(0);
-  const [isQuoteOpen, setIsQuoteOpen] = useState(false);
-  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', sector: 'Lakshmana Residency Lodge', notes: '' });
+  const [isQuoteOpen, setIsQuoteOpen] = useState(false);    const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', sector: 'General Inquiry', notes: '' });
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
 
   const handleQuoteSubmit = (e) => {
@@ -537,11 +730,11 @@ function App() {
                   value={quoteFormData.sector}
                   onChange={(e) => setQuoteFormData({ ...quoteFormData, sector: e.target.value })}
                 >
-                  <option value="Lakshmana Residency Lodge">Lakshmana Residency Lodge (Rameswaram)</option>
-                  <option value="Sethu Coastal Villa Enclave">Sethu Coastal Villa Enclave (Pamban)</option>
-                  <option value="Rameswaram Tourist Lodge">Rameswaram Tourist Lodge (Rameswaram)</option>
-                  <option value="Thulasi Baba Mansion">Thulasi Baba Mansion (Rameswaram)</option>
-                  <option value="Pamban Sea-View Resort">Pamban Sea-View Resort (Pamban)</option>
+                  <option value="House Construction">House Construction</option>
+                  <option value="Lodge Construction">Lodge Construction</option>
+                  <option value="Commercial Civil Build">Commercial Civil Build</option>
+                  <option value="Interior decoration">Interior decoration</option>
+                  <option value="General Inquiry">General Inquiry</option>
                 </select>
               </div>
 
@@ -708,7 +901,11 @@ function App() {
                                   <span style={{ fontSize: '10px', color: 'var(--gray-400)' }}>{lastMsg ? lastMsg.time : ''}</span>
                                 </div>
                                 <span style={{ fontSize: '11px', color: 'var(--gray-400)', display: 'block', marginBottom: '6px' }}>{thread.clientEmail}</span>
-                                {lastMsg && (
+                                {clientIsTyping[thread.clientEmail.toLowerCase()] ? (
+                                  <span style={{ fontSize: '11px', color: 'var(--vgn-gold)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    typing...
+                                  </span>
+                                ) : lastMsg && (
                                   <p style={{ fontSize: '11px', color: 'var(--gray-500)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {lastMsg.sender === 'admin' ? 'You: ' : ''}{lastMsg.text}
                                   </p>
@@ -729,6 +926,7 @@ function App() {
                           {currentThread && currentThread.messages.length > 0 ? (
                             currentThread.messages.map((m, i) => {
                               const isAdmin = m.sender === 'admin';
+                              const formattedParts = !isAdmin ? formatMessageText(m.text) : m.text;
                               return (
                                 <div
                                   key={i}
@@ -747,7 +945,51 @@ function App() {
                                   }}
                                  interviewer-comment="nice chat balloon shapes"
                                 >
-                                  <div>{m.text}</div>
+                                  <div>
+                                    {!isAdmin
+                                      ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
+                                      : m.text
+                                    }
+                                  </div>
+
+                                  {/* Attachment display */}
+                                  {m.attachment && (
+                                    <div style={{ marginTop: '8px' }}>
+                                      {m.attachment.isImage ? (
+                                        <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                                          <img
+                                            src={m.attachment.dataUrl}
+                                            alt={m.attachment.name}
+                                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
+                                          />
+                                          <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
+                                            {m.attachment.name}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '6px',
+                                          padding: '6px 10px',
+                                          background: isAdmin ? 'rgba(255,255,255,0.1)' : 'var(--bg-light)',
+                                          borderRadius: '6px',
+                                          fontSize: '11px'
+                                        }}>
+                                          <span>📄</span>
+                                          <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Reactions */}
+                                  <MessageReactions
+                                    reactions={m.reactions}
+                                    currentUserEmail={currentUser?.email}
+                                    onReact={(emoji) => handleToggleReaction(m.id, emoji)}
+                                  />
+
                                   <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                     {isAdmin ? 'You • ' : `${currentThread.clientName} • `} {m.time}
                                   </div>
@@ -759,9 +1001,19 @@ function App() {
                               Start typing a message below.
                             </div>
                           )}
+                          {selectedAdminClientEmail && clientIsTyping[selectedAdminClientEmail.toLowerCase()] && (
+                            <div style={{ alignSelf: 'flex-start', padding: '4px 12px' }}>
+                              <TypingIndicator name={currentThread?.clientName || 'Client'} />
+                            </div>
+                          )}
                         </div>
 
                         <form onSubmit={handleAdminSendMessage} style={{ display: 'flex', gap: '8px', padding: '12px', borderTop: '1px solid var(--gray-100)', background: 'var(--white)' }}>
+                          <ChatAttachment
+                            attachment={adminAttachment}
+                            onAttach={setAdminAttachment}
+                            onRemove={() => setAdminAttachment(null)}
+                          />
                           <input
                             type="text"
                             required
@@ -784,10 +1036,11 @@ function App() {
                   ) : (
                     /* Client Chat View */
                     <>
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'var(--bg-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div ref={clientChatContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'var(--bg-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         {clientMessages.length > 0 ? (
                           clientMessages.map((m, i) => {
                             const isAdminReply = m.sender === 'admin';
+                            const formattedParts = isAdminReply ? formatMessageText(m.text) : m.text;
                             return (
                               <div
                                 key={i}
@@ -805,7 +1058,52 @@ function App() {
                                   lineHeight: '1.4'
                                 }}
                               >
-                                <div>{m.text}</div>
+                                {/* Message text with rich formatting */}
+                                <div>
+                                  {isAdminReply
+                                    ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
+                                    : m.text
+                                  }
+                                </div>
+
+                                {/* Attachment display */}
+                                {m.attachment && (
+                                  <div style={{ marginTop: '8px' }}>
+                                    {m.attachment.isImage ? (
+                                      <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                                        <img
+                                          src={m.attachment.dataUrl}
+                                          alt={m.attachment.name}
+                                          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
+                                        />
+                                        <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
+                                          {m.attachment.name}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 10px',
+                                        background: isAdminReply ? 'var(--bg-light)' : 'rgba(255,255,255,0.1)',
+                                        borderRadius: '6px',
+                                        fontSize: '11px'
+                                      }}>
+                                        <span>📄</span>
+                                        <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Reactions */}
+                                <MessageReactions
+                                  reactions={m.reactions}
+                                  currentUserEmail={currentUser?.email}
+                                  onReact={(emoji) => handleToggleReaction(m.id, emoji)}
+                                />
+
                                 <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                   {isAdminReply ? 'Sethu Pandian B.E. (Admin) • ' : 'You • '} {m.time}
                                 </div>
@@ -819,7 +1117,29 @@ function App() {
                         )}
                       </div>
 
+                      {/* Typing indicator */}
+                      <AnimatePresence>
+                        {adminIsTyping && !clientInquiryStatus && (
+                          <div style={{ padding: '0 12px' }}>
+                            <TypingIndicator name="Sethu Pandian B.E." />
+                          </div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Quick reply bar */}
+                      <QuickReplyBar
+                        onSend={handleQuickReplySend}
+                        lastMessageText={clientMessages.length > 0 ? clientMessages[clientMessages.length - 1].text : ''}
+                        isVisible={showClientQuickReplies && !clientInquiryStatus}
+                      />
+
                       <form onSubmit={handleClientSendMessage} style={{ display: 'flex', gap: '8px', padding: '12px', borderTop: '1px solid var(--gray-100)', background: 'var(--white)' }}>
+                        <ChatAttachment
+                          attachment={clientAttachment}
+                          onAttach={setClientAttachment}
+                          onRemove={() => setClientAttachment(null)}
+                          disabled={clientInquiryStatus}
+                        />
                         <input
                           type="text"
                           required
@@ -894,6 +1214,9 @@ function App() {
           </div>
         );
       })()}
+
+      {/* 7. Toast Notifications */}
+      <ToastNotification toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
     </div>
   );
 }

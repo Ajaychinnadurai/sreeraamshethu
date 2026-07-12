@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Menu, X, Phone, User, Settings, ArrowRight, Bell, Mail, CheckCircle, FileText, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, X, Phone, User, Settings, ArrowRight, Bell, BellRing, Mail, CheckCircle, FileText, Clock } from 'lucide-react';
 import { asArray } from '../utils/storage';
 
 export default function ClayNavbar({
@@ -19,12 +19,57 @@ export default function ClayNavbar({
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showClientNotifs, setShowClientNotifs] = useState(false);
+  const bellRef = useRef(null);
+  const notifPanelRef = useRef(null);
 
+  // Close notification panel when clicking outside button AND panel
   useEffect(() => {
-    const handleClose = () => setShowClientNotifs(false);
-    window.addEventListener('click', handleClose);
-    return () => window.removeEventListener('click', handleClose);
-  }, []);
+    const handleClickOutside = (e) => {
+      if (showClientNotifs) {
+        const isOutsideBell = bellRef.current && !bellRef.current.contains(e.target);
+        const isOutsidePanel = notifPanelRef.current && !notifPanelRef.current.contains(e.target);
+        if (isOutsideBell && isOutsidePanel) {
+          setShowClientNotifs(false);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showClientNotifs]);
+
+  // Format relative time
+  const formatRelTime = (ts) => {
+    const now = Date.now();
+    const diff = now - (typeof ts === 'number' ? ts : new Date(ts).getTime());
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'Yesterday';
+    if (days < 14) return `${days}d ago`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 8) return `${weeks}w ago`;
+    return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  };
+
+  // Group notifications by time
+  const groupedNotifs = (() => {
+    const list = asArray(clientNotifications, []);
+    const groups = { today: [], yesterday: [], older: [] };
+    const now = Date.now();
+    const oneDay = 86400000;
+    list.forEach(n => {
+      const nTime = typeof n.timestamp === 'number' ? n.timestamp : (n.id || now);
+      const diff = now - nTime;
+      if (diff < oneDay) groups.today.push(n);
+      else if (diff < oneDay * 2) groups.yesterday.push(n);
+      else groups.older.push(n);
+    });
+    return groups;
+  })();
 
   const navItems = (currentUser && currentUser.role === 'admin') ? [
     { id: 'home', label: 'HOME' },
@@ -245,11 +290,10 @@ export default function ClayNavbar({
           {currentUser ? (
             <>
               {currentUser.role === 'client' && (
-                <div style={{ position: 'relative', marginRight: '10px' }}>
+                <div style={{ position: 'relative', marginRight: '10px' }} ref={bellRef}>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowClientNotifs(!showClientNotifs);
+                    onClick={() => {
+                      setShowClientNotifs(prev => !prev);
                     }}
                     style={{
                       position: 'relative',
@@ -292,17 +336,17 @@ export default function ClayNavbar({
                   {/* Dropdown panel */}
                   {showClientNotifs && (
                     <div
-                      onClick={(e) => e.stopPropagation()}
+                      ref={notifPanelRef}
                       style={{
                         position: 'absolute',
-                        top: 'calc(100% + 15px)',
-                        right: '-40px',
-                        width: '320px',
-                        maxHeight: '380px',
+                        top: 'calc(100% + 12px)',
+                        right: '-60px',
+                        width: '360px',
+                        maxHeight: '420px',
                         background: 'var(--white)',
-                        borderRadius: '4px',
-                        boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-                        border: '1px solid var(--cream-200)',
+                        borderRadius: '12px',
+                        boxShadow: '0 16px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid rgba(220, 200, 180, 0.2)',
                         overflow: 'hidden',
                         zIndex: 9999,
                         display: 'flex',
@@ -310,51 +354,164 @@ export default function ClayNavbar({
                         textAlign: 'left'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--gray-100)' }}>
-                        <strong style={{ fontSize: '12px', color: 'var(--vgn-blue-dark)' }}>Notifications</strong>
+                      {/* Header */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '14px 18px',
+                        borderBottom: '1px solid var(--gray-100)',
+                        background: 'var(--bg-light)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <BellRing size={14} style={{ color: 'var(--vgn-gold)' }} />
+                          <strong style={{ fontSize: '13px', color: 'var(--vgn-blue-dark)' }}>
+                            Notifications
+                            {clientUnreadCount > 0 && (
+                              <span style={{ marginLeft: '6px', color: 'var(--gray-400)', fontWeight: '600', fontSize: '11px' }}>
+                                ({clientUnreadCount} new)
+                              </span>
+                            )}
+                          </strong>
+                        </div>
                         {clientUnreadCount > 0 && (
                           <button
                             onClick={markClientAllRead}
-                            style={{ background: 'none', border: 'none', fontSize: '10px', fontWeight: '700', color: 'var(--vgn-gold)', cursor: 'pointer' }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: 'var(--vgn-gold)',
+                              cursor: 'pointer',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              transition: 'background 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                           >
                             Mark all read
                           </button>
                         )}
                       </div>
-                      <div style={{ overflowY: 'auto', maxHeight: '300px' }}>
-                        {asArray(clientNotifications).length > 0 ? (
-                          asArray(clientNotifications).map(n => (
-                            <div
-                              key={n.id}
-                              style={{
-                                display: 'flex',
-                                gap: '10px',
-                                padding: '10px 16px',
-                                borderBottom: '1px solid var(--gray-100)',
-                                background: n.read ? 'transparent' : 'var(--vgn-blue-light)',
-                                cursor: 'pointer'
-                              }}
-                              onClick={() => markClientAsRead(n.id)}
-                            >
-                              <div style={{ width: '24px', height: '24px', borderRadius: '4px', background: 'var(--vgn-blue-dark)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '12px' }}>
-                                {renderNotificationIcon(n.iconName)}
+
+                      {/* List */}
+                      <div style={{ overflowY: 'auto', maxHeight: '340px' }}>
+                        {['today', 'yesterday', 'older'].map(groupKey => {
+                          const items = groupedNotifs[groupKey];
+                          if (!items || items.length === 0) return null;
+                          const groupLabel = groupKey === 'today' ? 'Today' : groupKey === 'yesterday' ? 'Yesterday' : 'Older';
+                          return (
+                            <div key={groupKey}>
+                              <div style={{
+                                padding: '8px 18px 4px',
+                                fontSize: '10px',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.8px',
+                                color: 'var(--gray-400)'
+                              }}>
+                                {groupLabel}
                               </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--vgn-blue-dark)' }}>{n.title}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--gray-500)', marginTop: '2px', lineHeight: '1.4' }}>{n.message}</div>
-                                <div style={{ fontSize: '9px', color: 'var(--gray-400)', marginTop: '4px' }}>{n.time}</div>
-                              </div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); dismissClientNotification(n.id); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--gray-400)', cursor: 'pointer', fontSize: '12px', padding: '2px', alignSelf: 'flex-start' }}
-                              >
-                                &times;
-                              </button>
+                              {items.map(n => (
+                                <div
+                                  key={n.id}
+                                  style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    padding: '10px 18px',
+                                    borderBottom: '1px solid var(--gray-100)',
+                                    background: n.read ? 'transparent' : 'var(--vgn-blue-light)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.15s ease'
+                                  }}
+                                  onClick={() => markClientAsRead(n.id)}
+                                  onMouseEnter={(e) => {
+                                    if (n.read) e.currentTarget.style.background = 'var(--bg-light)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (n.read) e.currentTarget.style.background = 'transparent';
+                                  }}
+                                >
+                                  <div style={{
+                                    width: '30px',
+                                    height: '30px',
+                                    borderRadius: '8px',
+                                    background: 'var(--vgn-blue-dark)',
+                                    color: 'var(--white)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    fontSize: '13px',
+                                    opacity: n.read ? 0.7 : 1
+                                  }}>
+                                    {renderNotificationIcon(n.iconName)}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{
+                                      fontSize: '12px',
+                                      fontWeight: n.read ? '600' : '700',
+                                      color: 'var(--vgn-blue-dark)'
+                                    }}>
+                                      {n.title}
+                                    </div>
+                                    <div style={{
+                                      fontSize: '11px',
+                                      color: 'var(--gray-500)',
+                                      marginTop: '2px',
+                                      lineHeight: '1.4',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden'
+                                    }}>
+                                      {n.message}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'var(--gray-400)', marginTop: '4px' }}>
+                                      {formatRelTime(n.timestamp || n.id)}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); dismissClientNotification(n.id); }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: 'var(--gray-400)',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      padding: '2px 4px',
+                                      alignSelf: 'flex-start',
+                                      borderRadius: '4px',
+                                      transition: 'all 0.15s ease',
+                                      lineHeight: 1,
+                                      opacity: 0,
+                                      transition: 'opacity 0.15s ease'
+                                    }}
+                                    className="notif-dismiss-btn"
+                                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gray-600)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--gray-400)'}
+                                  >
+                                    &times;
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                          ))
-                        ) : (
-                          <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--gray-400)', fontSize: '11px' }}>
-                            No notifications yet
+                          );
+                        })}
+                        {asArray(clientNotifications).length === 0 && (
+                          <div style={{
+                            padding: '40px 18px',
+                            textAlign: 'center',
+                            color: 'var(--gray-400)',
+                            fontSize: '12px'
+                          }}>
+                            <BellRing size={28} style={{ opacity: 0.3, marginBottom: '10px' }} />
+                            <div style={{ fontWeight: '600' }}>No notifications yet</div>
+                            <div style={{ fontSize: '11px', marginTop: '4px', color: 'var(--gray-400)' }}>
+                              Updates from Sree Raam Shethu will appear here
+                            </div>
                           </div>
                         )}
                       </div>

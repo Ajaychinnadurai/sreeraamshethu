@@ -100,6 +100,18 @@ function toDbRow(key, item) {
     if ('clientName' in row) row.clientname = row.clientName;
     delete row.clientEmail;
     delete row.clientName;
+
+    // Serialize attachment/reactions into text column to bypass missing columns in Supabase
+    if (row.attachment || row.reactions) {
+      const chatPayload = {
+        text: row.text,
+        attachment: row.attachment || null,
+        reactions: row.reactions || null
+      };
+      row.text = `__CHAT_JSON__:${JSON.stringify(chatPayload)}`;
+    }
+    delete row.attachment;
+    delete row.reactions;
   }
 
   if (key === 'sreeraam_notifications_admin' || key.startsWith('sreeraam_notifications_client_')) {
@@ -107,6 +119,11 @@ function toDbRow(key, item) {
     if ('iconName' in row) row.iconname = row.iconName;
     delete row.ownerEmail;
     delete row.iconName;
+
+    // Default required Postgres fields to satisfy NOT NULL constraints
+    if (!row.date) row.date = 'Just now';
+    if (!row.time) row.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!row.iconname) row.iconname = 'bell';
   }
 
   return row;
@@ -132,6 +149,18 @@ function fromDbRow(key, row) {
     if ('clientname' in item) item.clientName = item.clientname;
     delete item.clientemail;
     delete item.clientname;
+
+    // Deserialize attachment/reactions from text column if packaged as JSON
+    if (item.text && item.text.startsWith('__CHAT_JSON__:')) {
+      try {
+        const payload = JSON.parse(item.text.substring('__CHAT_JSON__:'.length));
+        item.text = payload.text;
+        item.attachment = payload.attachment;
+        item.reactions = payload.reactions;
+      } catch (e) {
+        console.warn('Failed to parse chat JSON payload:', e);
+      }
+    }
   }
 
   if (key === 'sreeraam_notifications_admin' || key.startsWith('sreeraam_notifications_client_')) {
@@ -144,45 +173,44 @@ function fromDbRow(key, row) {
   return item;
 }
 
-// Write locally, then push to Supabase
+// Write locally, then push to Supabase (best-effort, never blocks the app)
 export function saveLocalAndCloud(key, data) {
+  // Always save locally first — the app works without Supabase
   localStorage.setItem(key, JSON.stringify(data));
-
-  // Notify local components immediately
   window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data } }));
 
-  if (!supabase) {
-    console.warn(`[storage.js] saveLocalAndCloud: Supabase not configured. Data for "${key}" saved locally only.`);
-    return;
-  }
+  if (!supabase) return;
 
   const config = getTableConfig(key);
-  if (!config) {
-    console.warn(`[storage.js] saveLocalAndCloud: No table config found for key "${key}".`);
-    return;
-  }
+  if (!config) return;
 
   const { table, type, filter } = config;
 
+  // Fire-and-forget: Supabase sync is best-effort, never blocks the UI
   (async () => {
-    let queryDel = supabase.from(table).delete();
-    if (type === 'filtered') {
-      Object.keys(filter).forEach(k => { queryDel = queryDel.eq(k, filter[k]); });
-    } else {
-      queryDel = queryDel.neq('id', 0);
-    }
-    await queryDel;
+    try {
+      if (data.length > 0) {
+        const rowsToUpsert = data.map(item => {
+          let r = toDbRow(key, item);
+          if (type === 'filtered') r = { ...r, ...filter };
+          return r;
+        });
 
-    if (data.length > 0) {
-      const rowsToInsert = data.map(item => {
-        let r = toDbRow(key, item);
-        if (type === 'filtered') r = { ...r, ...filter };
-        return r;
-      });
-      const { error } = await supabase.from(table).insert(rowsToInsert);
-      if (error) console.error(`[storage.js] Supabase insert failed for "${key}":`, error);
+        // Use upsert instead of delete+insert — merges on id conflict,
+        // avoids RLS delete permission issues and race conditions
+        const { error } = await supabase
+          .from(table)
+          .upsert(rowsToUpsert, { onConflict: 'id', ignoreDuplicates: false });
+
+        if (error) {
+          console.warn(`[storage.js] Supabase sync skipped for "${key}": ${error.message || '(see error object)'}`, error);
+          // Not a critical error — data is safely stored in localStorage
+        }
+      }
+    } catch (err) {
+      console.warn(`[storage.js] Supabase sync exception for "${key}":`, err);
     }
-  })().catch(err => console.error(`[storage.js] saveLocalAndCloud failed for "${key}":`, err));
+  })();
 }
 
 // Sync from Supabase to local storage
@@ -316,7 +344,24 @@ export function startDbSync(keys = []) {
 
   performSync();
 
-  // Poll every 5 seconds for background changes
+  // Listen to live database changes for instant sync
+  let dbChannel = null;
+  if (supabase) {
+    dbChannel = supabase
+      .channel('db-sync-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        performSync();
+      })
+      .subscribe();
+  }
+
+  // Poll every 5 seconds as a robust fallback
   syncInterval = setInterval(performSync, 5000);
-  return () => clearInterval(syncInterval);
+  
+  return () => {
+    clearInterval(syncInterval);
+    if (dbChannel && supabase) {
+      supabase.removeChannel(dbChannel);
+    }
+  };
 }
