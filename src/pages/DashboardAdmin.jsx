@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Mail, ClipboardCheck, ArrowUpRight, MessageCircle, Plus, Edit2, Trash2, Save, X, Info, Bell, Search, ArrowUpDown, Send } from 'lucide-react';
 import ProfileButton from '../components/ProfileButton';
-import { saveLocalAndCloud } from '../utils/storage';
+import { saveLocalAndCloud, safeParseJson } from '../utils/storage';
 
 function EmptyState({ icon, title, subtitle }) {
   return (
@@ -43,31 +43,31 @@ export default function DashboardAdmin({ user, onLogout, onUpdateUser }) {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const addNotification = (item) => {
-    const saved = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const newNotif = { id: Date.now() + Math.random(), read: false, ...item };
     const updated = [newNotif, ...saved];
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(updated));
+    saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
   };
 
   const markAllRead = () => {
-    const saved = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const updated = saved.map(n => ({ ...n, read: true }));
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(updated));
+    saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
   };
 
   const markAsRead = (id) => {
-    const saved = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const updated = saved.map(n => n.id === id ? { ...n, read: true } : n);
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(updated));
+    saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
   };
 
   const dismissNotification = (id) => {
-    const saved = JSON.parse(localStorage.getItem('sreeraam_notifications_admin') || '[]');
+    const saved = safeParseJson(localStorage.getItem('sreeraam_notifications_admin'), []);
     const updated = saved.filter(n => n.id !== id);
-    localStorage.setItem('sreeraam_notifications_admin', JSON.stringify(updated));
+    saveLocalAndCloud('sreeraam_notifications_admin', updated);
     setNotifications(updated);
   };
 

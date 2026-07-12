@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check, Eye, EyeOff } from 'lucide-react';
+import { safeParseJson, saveLocalAndCloud } from '../utils/storage';
 
 export default function Auth({ onLoginSuccess, inModal }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,7 +54,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
       const user = users.find(u => u.email.toLowerCase() === normalizedEmail && u.password === formData.password);
 
       if (!user) {
@@ -90,7 +91,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
       const userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
 
       if (userExists) {
@@ -106,7 +107,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
       };
 
       users.push(newUser);
-      localStorage.setItem('registeredUsers', JSON.stringify(users));
+      saveLocalAndCloud('registeredUsers', users);
 
       // Auto-login after successful registration
       const registeredUser = { ...newUser, role: 'client' };
