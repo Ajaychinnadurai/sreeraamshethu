@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import SEO from '../components/SEO';
 import { Mail, Phone, MapPin, Send, CheckCircle, Clock } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
 
@@ -65,6 +66,12 @@ export default function Contact() {
   };
 
   return (
+    <>
+      <SEO
+        title="Contact Us"
+        description="Contact Shree Ramsethu Constructions & Interiors in Rameswaram. Call +91 9566615030, email sreeraamconstruction@gmail.com, or visit our office at Thulasi Baba Madam Street."
+        canonical="/contact"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* Header */}
       <motion.div {...fadeUp} style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -339,6 +346,6 @@ export default function Contact() {
           </div>
         </div>
       </motion.div>
-    </div>
+    </div></>
   );
 }

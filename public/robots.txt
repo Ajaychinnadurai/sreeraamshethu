@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://shreeramsethu.vercel.app/sitemap.xml
+
+# Crawl delay for gentle crawling (if needed)
+Crawl-delay: 10

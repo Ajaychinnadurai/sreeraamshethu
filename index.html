@@ -2,13 +2,117 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  FAVICONS                                    -->
+    <!-- ═══════════════════════════════════════════ -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Shree Ramsethu Constructions & Interiors is a premium structural engineering and construction firm based in Rameshwaram, Tamil Nadu. Specializing in marine infrastructure, seismic-resistant designs, and eco-friendly buildings." />
-    <meta name="keywords" content="structural engineering Rameshwaram, engineering consult Tamil Nadu, bridge design India, Pamban bridge structural, sustainable architecture Tamil Nadu" />
-    <meta name="author" content="Shree Ramsethu Constructions & Interiors, Rameshwaram" />
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  PRIMARY META TAGS  (fallback; SPA overrides) -->
+    <!-- ═══════════════════════════════════════════ -->
+    <meta name="description" content="Shree Ramsethu Constructions & Interiors — Rameswaram's trusted civil engineering contractor. House builds, lodge construction, commercial civil projects & bespoke interior decoration by S.M. Sethu Pandian B.E." />
+    <meta name="keywords" content="construction company Rameswaram, civil contractor Tamil Nadu, house builder Pamban, lodge construction Rameswaram, interior decoration, civil engineer, Sree Raam Shethu, structural design, building contractor south India" />
+    <meta name="author" content="S.M. Sethu Pandian B.E. — Shree Ramsethu Constructions & Interiors, Rameswaram" />
+    <meta name="robots" content="index, follow" />
+    <meta name="geo.region" content="IN-TN" />
+    <meta name="geo.placename" content="Rameswaram" />
+    <meta name="geo.position" content="9.2833;79.3000" />
+    <meta name="ICBM" content="9.2833, 79.3000" />
+    <link rel="me" href="mailto:sreeraamconstruction@gmail.com" />
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  OPEN GRAPH / SOCIAL SHARING  (fallback)     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Shree Ramsethu Constructions & Interiors" />
+    <meta property="og:title" content="Shree Ramsethu Constructions & Interiors | Premium Structural Engineering & Construction | Rameswaram, Tamil Nadu" />
+    <meta property="og:description" content="Rameswaram's premier civil engineering contractor — house construction, lodge projects, commercial builds & custom interiors by S.M. Sethu Pandian B.E." />
+    <meta property="og:url" content="https://shreeramsethu.vercel.app" />
+    <meta property="og:image" content="https://shreeramsethu.vercel.app/og-default.jpg" />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Shree Ramsethu Constructions & Interiors" />
+    <meta name="twitter:description" content="Rameswaram's trusted construction partner — house, lodge & commercial builds by B.E. Civil engineer." />
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  CANONICAL URL                               -->
+    <!-- ═══════════════════════════════════════════ -->
+    <link rel="canonical" href="https://shreeramsethu.vercel.app" />
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  JSON-LD STRUCTURED DATA  (LocalBusiness)    -->
+    <!-- ═══════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Shree Ramsethu Constructions & Interiors",
+      "alternateName": "Sree Raam Shethu Construction",
+      "description": "Premium civil construction, house building, lodge construction, commercial projects & interior decoration services in Rameswaram, Tamil Nadu. Directed by S.M. Sethu Pandian B.E.",
+      "url": "https://shreeramsethu.vercel.app",
+      "telephone": "+919566615030",
+      "email": "sreeraamconstruction@gmail.com",
+      "priceRange": "₹₹₹",
+      "image": "https://shreeramsethu.vercel.app/og-default.jpg",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "12/15c Thulasi Baba Madam Street, Near Lakshmana Theertham",
+        "addressLocality": "Rameswaram",
+        "addressRegion": "Tamil Nadu",
+        "postalCode": "623526",
+        "addressCountry": "IN"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 9.2833,
+        "longitude": 79.3000
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "09:00",
+          "closes": "18:30"
+        }
+      ],
+      "founder": {
+        "@type": "Person",
+        "name": "S.M. Sethu Pandian",
+        "honorificSuffix": "B.E.",
+        "jobTitle": "Director & Civil Engineer",
+        "telephone": "+919566615030"
+      },
+      "areaServed": ["Rameswaram", "Pamban", "Ramanathapuram", "Tamil Nadu"],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Construction Services",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "House Construction" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Lodge Construction" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Commercial Civil Build" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Interior Decoration" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Structural Engineering Design" } }
+        ]
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "bestRating": "5",
+        "ratingCount": "87"
+      },
+      "sameAs": [
+        "https://wa.me/919566615030"
+      ]
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  GOOGLE FONTS (performance-optimized)        -->
+    <!-- ═══════════════════════════════════════════ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" />
@@ -16,7 +120,11 @@
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" />
     </noscript>
-    <title>Shree Ramsethu Constructions & Interiors | Premium Structural Engineering & Construction | Rameshwaram, Tamil Nadu</title>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  PAGE TITLE  (fallback; SPA overrides)       -->
+    <!-- ═══════════════════════════════════════════ -->
+    <title>Shree Ramsethu Constructions & Interiors | Premium Structural Engineering & Construction | Rameswaram, Tamil Nadu</title>
   </head>
   <body>
     <div id="root"></div>

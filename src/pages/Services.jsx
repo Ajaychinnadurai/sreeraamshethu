@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '../components/SEO';
 import { ShieldCheck, Compass, GitMerge, HardHat, ChevronRight } from 'lucide-react';
 
 export default function Services({ onRequestQuote }) {
@@ -37,6 +38,12 @@ export default function Services({ onRequestQuote }) {
   ];
 
   return (
+    <>
+      <SEO
+        title="Services"
+        description="Shree Ramsethu Constructions offers house construction, lodge building, commercial civil projects, interior decoration, structural design & licensing in Rameswaram, Tamil Nadu."
+        canonical="/services"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* Header */}
       <div style={{ textAlign: 'left', marginBottom: '60px', maxWidth: '800px' }}>
@@ -169,6 +176,6 @@ export default function Services({ onRequestQuote }) {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </div></>
   );
 }

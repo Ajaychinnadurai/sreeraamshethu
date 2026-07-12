@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { MapPin, ArrowLeft, Filter, Phone, Download, HelpCircle, CheckCircle, Play } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
@@ -79,6 +80,13 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
+      <>
+        <SEO
+          title={`${selectedProject.name} | Projects`}
+          description={`${selectedProject.name} — ${selectedProject.type} by Shree Ramsethu Constructions in ${selectedProject.location}. ${selectedProject.desc}`}
+          canonical="/projects"
+          image={selectedProject.image}
+        />
       <div className="container" style={{ padding: '40px 0 80px 0' }}>
         <button
           onClick={() => setSelectedProject(null)}
@@ -280,11 +288,17 @@ export default function Projects() {
             </div>
           </div>
         </div>
-      </div>
+      </div></>
     );
   }
 
   return (
+    <>
+      <SEO
+        title="Projects"
+        description="Explore Shree Ramsethu Constructions' project catalog — ongoing house builds, lodge constructions, commercial civil projects & completed sites in Rameswaram & Pamban."
+        canonical="/projects"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* Title */}
       <div style={{ textAlign: 'left', marginBottom: '40px' }}>
@@ -451,8 +465,7 @@ export default function Projects() {
               <p style={{ fontWeight: '600' }}>No matching projects found.</p>
               <p style={{ fontSize: '12px' }}>Try clearing filters to explore all active builds.</p>
             </div>
-          )}
-      </div>
-    </div>
+          )}        </div>
+    </div></>
   );
 }

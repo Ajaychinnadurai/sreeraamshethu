@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '../components/SEO';
 import { ArrowRight, MapPin, Phone, Award, CheckCircle, ChevronRight, Mail } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 import { getVariant, trackClick, resolveVariantFromUrl, HERO_CTA_TEST, LAYOUT_TEST } from '../utils/abTest';
@@ -1245,7 +1246,14 @@ export default function Home({ onNavigate, onRequestQuote }) {
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+    <>
+      <SEO
+        title="Home"
+        description="Shree Ramsethu Constructions &amp; Interiors — Rameswaram's trusted civil engineering contractor. House construction, lodge building, commercial projects &amp; custom interior decoration by S.M. Sethu Pandian B.E."
+        canonical="/"
+        type="website"
+      />
+    <div style={{ position: 'relative', width: '100%' }}>
       {/* Lifted Video Background Cycler */}
       <div
         style={{
@@ -1256,7 +1264,6 @@ export default function Home({ onNavigate, onRequestQuote }) {
           height: layoutVariant === 'B' ? '92vh' : '85vh',
           minHeight: layoutVariant === 'B' ? '650px' : '600px',
           zIndex: 0,
-          overflow: 'hidden',
           pointerEvents: 'none',
           marginTop: '-85px'
         }}
@@ -1300,6 +1307,6 @@ export default function Home({ onNavigate, onRequestQuote }) {
       </div>
 
       {layoutVariant === 'B' ? renderLayoutB() : renderLayoutA()}
-    </div>
+    </div></>
   );
 }

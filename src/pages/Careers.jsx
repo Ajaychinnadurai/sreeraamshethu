@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from '../components/SEO';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
@@ -60,6 +61,12 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   };
 
   return (
+    <>
+      <SEO
+        title="Careers"
+        description="Join Shree Ramsethu Constructions & Interiors — careers in civil construction, interior decoration & project management in Rameswaram, Tamil Nadu."
+        canonical="/careers"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -244,6 +251,6 @@ export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </div></>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import SEO from '../components/SEO';
 import { Target, Eye, ShieldCheck, Award } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
@@ -43,6 +44,12 @@ export default function About() {
   };
 
   return (
+    <>
+      <SEO
+        title="About Us"
+        description="Learn about Shree Ramsethu Constructions & Interiors — Rameswaram's civil engineering contractor led by S.M. Sethu Pandian B.E. Specializing in house construction, lodge projects, commercial builds & interior decoration."
+        canonical="/about"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* 1. Header Hero section */}
       <motion.div
@@ -194,6 +201,6 @@ export default function About() {
           </div>
         </div>
       </motion.div>
-    </div>
+    </div></>
   );
 }

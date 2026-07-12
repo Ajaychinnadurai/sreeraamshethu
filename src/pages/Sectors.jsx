@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import SEO from '../components/SEO';
 import { Home as HomeIcon, Building, ShieldCheck, Palette, CheckCircle } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
@@ -52,6 +53,12 @@ export default function Sectors() {
   };
 
   return (
+    <>
+      <SEO
+        title="Sectors"
+        description="Shree Ramsethu Constructions' core execution divisions — house construction, lodge building, commercial civil projects & interior decoration. Serving Rameswaram & Pamban."
+        canonical="/sectors"
+      />
     <div className="container" style={{ padding: '50px 0 80px 0' }}>
       {/* Title */}
       <motion.div {...fadeUp} style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -146,6 +153,6 @@ export default function Sectors() {
           </motion.div>
         ))}
       </motion.div>
-    </div>
+    </div></>
   );
 }

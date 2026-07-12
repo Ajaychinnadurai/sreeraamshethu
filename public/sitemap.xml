@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Home page — primary landing, highest priority -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://shreeramsethu.vercel.app/og-default.jpg</image:loc>
+      <image:title>Shree Ramsethu Constructions Premises</image:title>
+    </image:image>
+  </url>
+
+  <!-- About — company profile, mission, leadership -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/about</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Services — civil construction, interior decoration offerings -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/services</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Sectors — core execution divisions -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/sectors</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Projects — construction catalog with ongoing and completed works -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/projects</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Careers — job openings and applications -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/careers</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Contact — office location, inquiry form -->
+  <url>
+    <loc>https://shreeramsethu.vercel.app/contact</loc>
+    <lastmod>2026-07-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
