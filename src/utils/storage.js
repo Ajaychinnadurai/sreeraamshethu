@@ -1,3 +1,4 @@
+// Build: 2026-07-12 — Force fresh Vercel build to pick up Supabase env vars
 import { createClient } from '@supabase/supabase-js';
 
 export function safeParseJson(value, fallback = null) {
