@@ -91,7 +91,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
       }
 
       const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const userExists = users.some(u => u.email.toLowerCase() === formData.email.toLowerCase());
+      const userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
 
       if (userExists) {
         setErrorMsg('Account with this email already exists.');
@@ -100,7 +100,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
 
       const newUser = {
         name: formData.name,
-        email: formData.email.toLowerCase(),
+        email: normalizedEmail,
         phone: formData.phone,
         password: formData.password
       };
@@ -108,15 +108,9 @@ export default function Auth({ onLoginSuccess, inModal }) {
       users.push(newUser);
       localStorage.setItem('registeredUsers', JSON.stringify(users));
 
+      // Auto-login after successful registration
       const registeredUser = { ...newUser, role: 'client' };
-      // Don't auto-login — save user to registered list only (already done above)
-      setSuccess({ user: registeredUser, type: 'register' });
-      successTimerRef.current = setTimeout(() => {
-        setSuccess(null);
-        setFormData({ name: '', email: registeredUser.email, phone: '', password: '', confirmPassword: '' });
-        setIsLogin(true);
-        setErrorMsg('');
-      }, 1800);
+      showLoginSuccess(registeredUser);
     }
   };
 
@@ -159,6 +153,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
                   style={{ paddingLeft: '40px' }}
                   value={formData.name}
                   onChange={handleInputChange}
+                  autoComplete="name"
                 />
               </div>
             </div>
@@ -176,6 +171,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
                   style={{ paddingLeft: '40px' }}
                   value={formData.phone}
                   onChange={handleInputChange}
+                  autoComplete="tel"
                 />
               </div>
             </div>
@@ -195,6 +191,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
               style={{ paddingLeft: '40px' }}
               value={formData.email}
               onChange={handleInputChange}
+              autoComplete={isLogin ? "username" : "email"}
             />
           </div>
         </div>
@@ -212,6 +209,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
               style={{ paddingLeft: '40px', paddingRight: '40px' }}
               value={formData.password}
               onChange={handleInputChange}
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
             <button
               type="button"
@@ -249,6 +247,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
                 style={{ paddingLeft: '40px', paddingRight: '40px' }}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
+                autoComplete="new-password"
               />
               <button
                 type="button"

@@ -50,6 +50,34 @@ function App() {
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [activePage, setActivePage] = useState(initialPage);
 
+  // Seed default client credentials on initial load
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('registeredUsers');
+      const users = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(users)) {
+        if (!users.some(u => u.email.toLowerCase() === 'kumar@mail.com')) {
+          users.push({
+            name: 'Kumar',
+            email: 'kumar@mail.com',
+            phone: '9876543210',
+            password: 'password'
+          });
+          localStorage.setItem('registeredUsers', JSON.stringify(users));
+        }
+      } else {
+        localStorage.setItem('registeredUsers', JSON.stringify([{
+          name: 'Kumar',
+          email: 'kumar@mail.com',
+          phone: '9876543210',
+          password: 'password'
+        }]));
+      }
+    } catch (e) {
+      console.error('Error seeding default client user:', e);
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('sreeraam_active_page', activePage);
   }, [activePage]);
@@ -440,7 +468,7 @@ function App() {
           onLoginSuccess={(u) => {
             setCurrentUser(u);
             setIsAuthOpen(false);
-            setActivePage('dashboard');
+            setActivePage(u.role === 'admin' ? 'dashboard' : 'home');
           }}
         />
       </ClayModal>
