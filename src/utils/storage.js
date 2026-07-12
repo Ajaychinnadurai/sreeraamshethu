@@ -15,7 +15,7 @@ export function asArray(value, fallback = []) {
   return Array.isArray(value) ? value : fallback;
 }
 
-const BUCKET_URL = 'https://kvdb.io/sreeraamshethu_2026_db';
+const BUCKET_URL = 'https://kvdb.io/J6e3PPhwXzgPjqkPLRTxnk';
 
 // Write locally, then push to cloud in background
 export function saveLocalAndCloud(key, data) {
