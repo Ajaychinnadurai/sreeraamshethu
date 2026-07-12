@@ -18,17 +18,12 @@ export function asArray(value, fallback = []) {
 }
 
 // Supabase Client Setup
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Note: The anon key is a public-safe key controlled by Supabase RLS policies.
+// It is intentionally hardcoded here to avoid Vercel build-time env var issues.
+const SUPABASE_URL = 'https://xfjbldhifbchdqvumovl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmamJsZGhpZmJjaGRxdnVtb3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MjM1ODIsImV4cCI6MjA5OTM5OTU4Mn0.-f1gYaMcbdTgkGYaH7OHBBKdjaaFA2YZqhSBilFRW-A';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error(
-    '[storage.js] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing! ' +
-    'Add them to your .env file locally and to Vercel Environment Variables in production.'
-  );
-}
-
-export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Supabase Table mapping configurations
 const TABLE_MAP = {
