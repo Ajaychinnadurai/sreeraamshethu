@@ -150,14 +150,17 @@ export default function Home({ onNavigate, onRequestQuote }) {
     .slice()
     .sort((a, b) => b.id - a.id);
 
-  // Video Background Cycler
+  // Video Background Cycler with preloading
   const heroVideos = ['/videos/bg_video1.mp4', '/videos/bg_video2.mp4'];
   const [videoIndex, setVideoIndex] = useState(0);
+  const [videoReady, setVideoReady] = useState(false);
 
+  // Cycle video every 12 seconds
   useEffect(() => {
     const timer = setInterval(() => {
+      setVideoReady(false);
       setVideoIndex(prev => (prev + 1) % heroVideos.length);
-    }, 10000);
+    }, 12000);
     return () => clearInterval(timer);
   }, []);
 
@@ -634,30 +637,32 @@ export default function Home({ onNavigate, onRequestQuote }) {
           paddingTop: '85px'
         }}
       >
-        {/* Video Background Cycler */}
+        {/* Video Background — preload both, show active one when ready */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, overflow: 'hidden' }}>
-          <AnimatePresence mode="popLayout">
-            <motion.video
-              key={heroVideos[videoIndex]}
-              src={heroVideos[videoIndex]}
-              autoPlay
+          {/* Preload hidden: next video buffers in background */}
+          {heroVideos.map((src, i) => (
+            <video
+              key={src}
+              src={src}
+              preload="auto"
               muted
               playsInline
               loop
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.55 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: 'easeInOut' }}
+              autoPlay={i === videoIndex}
+              onCanPlay={() => { if (i === videoIndex) setVideoReady(true); }}
               style={{
                 position: 'absolute',
                 top: 0, left: 0,
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                objectPosition: 'center'
+                objectPosition: 'center',
+                opacity: i === videoIndex && videoReady ? 0.55 : 0,
+                transition: 'opacity 1.5s ease-in-out',
+                pointerEvents: 'none'
               }}
             />
-          </AnimatePresence>
+          ))}
         </div>
 
         {/* Hero Overlay */}
