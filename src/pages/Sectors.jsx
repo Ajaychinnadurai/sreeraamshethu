@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Home as HomeIcon, Building, ShieldCheck, Palette, CheckCircle } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
 const defaultDivisions = [
   { id: 1, title: 'House Construction', metrics: 'Custom Built Villas & Homes', desc: 'Specialized residential builders in Rameswaram. We construct premium independent houses, bungalows, and dual-floor villas optimized for local weather and foundation structures.', services: ['Custom architectural design & drafting', 'Foundation pile works for sandy regions', 'Traditional red clay roof tiles framing', 'Complete turn-key civil contracting'] },

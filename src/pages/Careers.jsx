@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, User, Send, CheckCircle } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
 export default function Careers({ currentUser, onNavigate, onRequestAuth }) {
   const [formData, setFormData] = useState({ name: '', email: '', role: '', notes: '' });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Eye, ShieldCheck, Award } from 'lucide-react';
-import { safeParseJson, asArray, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 
 export default function About() {
   const [milestones, setMilestones] = useState([]);
