@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check, Eye, EyeOff } from 'lucide-react';
-import { safeParseJson, saveLocalAndCloud } from '../utils/storage';
+import { safeParseJson, saveLocalAndCloud, supabase } from '../utils/storage';
 
 export default function Auth({ onLoginSuccess, inModal }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -30,7 +30,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
     setErrorMsg('');
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     const normalizedEmail = formData.email.trim().toLowerCase();
@@ -54,8 +54,32 @@ export default function Auth({ onLoginSuccess, inModal }) {
         return;
       }
 
-      const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
-      const user = users.find(u => u.email.toLowerCase() === normalizedEmail && u.password === formData.password);
+      let user = null;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('registered_users')
+            .select('*')
+            .eq('email', normalizedEmail)
+            .eq('password', formData.password);
+          
+          if (!error && data && data.length > 0) {
+            user = {
+              name: data[0].name,
+              email: data[0].email,
+              phone: data[0].phone,
+              password: data[0].password
+            };
+          }
+        } catch (err) {
+          console.warn('Direct database login failed, falling back to local storage:', err);
+        }
+      }
+
+      if (!user) {
+        const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
+        user = users.find(u => u.email.toLowerCase() === normalizedEmail && u.password === formData.password);
+      }
 
       if (!user) {
         setErrorMsg('Invalid email or password.');
@@ -91,8 +115,26 @@ export default function Auth({ onLoginSuccess, inModal }) {
         return;
       }
 
-      const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
-      const userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+      let userExists = false;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('registered_users')
+            .select('email')
+            .eq('email', normalizedEmail);
+          
+          if (!error && data && data.length > 0) {
+            userExists = true;
+          }
+        } catch (err) {
+          console.warn('Direct database user exist check failed, checking local storage:', err);
+        }
+      }
+
+      if (!userExists) {
+        const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
+        userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+      }
 
       if (userExists) {
         setErrorMsg('Account with this email already exists.');
@@ -106,6 +148,7 @@ export default function Auth({ onLoginSuccess, inModal }) {
         password: formData.password
       };
 
+      const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
       users.push(newUser);
       saveLocalAndCloud('registeredUsers', users);
 
