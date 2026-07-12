@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Phone, ShieldAlert, LogIn, UserPlus, Check, Eye, EyeOff } from 'lucide-react';
 import { safeParseJson, saveLocalAndCloud, supabase } from '../utils/storage';
+import bcrypt from 'bcryptjs';
 
 export default function Auth({ onLoginSuccess, inModal }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -60,16 +61,23 @@ export default function Auth({ onLoginSuccess, inModal }) {
           const { data, error } = await supabase
             .from('registered_users')
             .select('*')
-            .eq('email', normalizedEmail)
-            .eq('password', formData.password);
+            .eq('email', normalizedEmail);
           
           if (!error && data && data.length > 0) {
-            user = {
-              name: data[0].name,
-              email: data[0].email,
-              phone: data[0].phone,
-              password: data[0].password
-            };
+            const dbPassword = data[0].password;
+            // Check if the stored password is a bcrypt hash (starts with $2a$ or $2b$) or plain text (legacy fallback)
+            const isMatch = dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')
+              ? bcrypt.compareSync(formData.password, dbPassword)
+              : formData.password === dbPassword;
+
+            if (isMatch) {
+              user = {
+                name: data[0].name,
+                email: data[0].email,
+                phone: data[0].phone,
+                password: dbPassword
+              };
+            }
           }
         } catch (err) {
           console.warn('Direct database login failed, falling back to local storage:', err);
@@ -78,7 +86,17 @@ export default function Auth({ onLoginSuccess, inModal }) {
 
       if (!user) {
         const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
-        user = users.find(u => u.email.toLowerCase() === normalizedEmail && u.password === formData.password);
+        const matched = users.find(u => u.email.toLowerCase() === normalizedEmail);
+        if (matched) {
+          const dbPassword = matched.password;
+          const isMatch = dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')
+            ? bcrypt.compareSync(formData.password, dbPassword)
+            : formData.password === dbPassword;
+
+          if (isMatch) {
+            user = matched;
+          }
+        }
       }
 
       if (!user) {
@@ -141,11 +159,14 @@ export default function Auth({ onLoginSuccess, inModal }) {
         return;
       }
 
+      // Hash the password securely with 10 salt rounds before saving
+      const hashedPassword = bcrypt.hashSync(formData.password, 10);
+
       const newUser = {
         name: formData.name,
         email: normalizedEmail,
         phone: formData.phone,
-        password: formData.password
+        password: hashedPassword
       };
 
       const users = safeParseJson(localStorage.getItem('registeredUsers'), []);
