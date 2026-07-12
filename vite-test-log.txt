@@ -7,3 +7,7 @@ Port 5174 is in use, trying another one...
   [32m➜[39m  [1mNetwork[22m: [36mhttp://10.158.24.238:[1m5175[22m/[39m
 [2m14:13:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Home.jsx[22m
 [2m14:13:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Home.jsx[22m
+[2m14:18:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Home.jsx[22m
+[2m14:18:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/main.jsx[22m
+[2m14:18:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mposthog-js[32m[39m
+[2m14:18:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m

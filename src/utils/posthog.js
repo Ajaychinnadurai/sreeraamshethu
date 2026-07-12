@@ -156,19 +156,10 @@ export function getPostHogFlags() {
 
 /**
  * PostHog experiment / feature flag key definitions.
- * Create these flags in your PostHog dashboard under Experiments.
+ * Must match the flag keys created in your PostHog dashboard under Experiments.
+ * Used by abTest.js getVariant() for professional A/B testing.
  */
-export const EXPERIMENTS = {
-  HERO_CTA_TEXT: {
-    flagKey: 'hero-cta-text',
-    variants: ['control', 'test'],
-    localStorageKey: 'sreeraam_abtest_hero_cta_text_variant',
-    defaultValue: 'A'
-  },
-  LANDING_LAYOUT: {
-    flagKey: 'landing-layout',
-    variants: ['A', 'B'],
-    localStorageKey: 'sreeraam_abtest_landing_layout_variant',
-    defaultValue: 'A'
-  }
+export const EXPERIMENT_FLAGS = {
+  'hero_cta_text': 'hero-cta-text',
+  'landing_layout': 'landing-layout'
 };

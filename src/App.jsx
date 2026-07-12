@@ -7,6 +7,7 @@ import ClayModal from './components/ClayModal';
 import ClayButton from './components/ClayButton';
 import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb } from './utils/storage';
 import { registerAbTestDebugShortcut } from './utils/abTest';
+import { identifyUser, resetUser, trackEvent } from './utils/posthog';
 
 // Pages
 import Home from './pages/Home';
@@ -383,6 +384,8 @@ function App() {
   };
 
   const handleLogout = () => {
+    trackEvent('user_logged_out', { email: currentUser?.email });
+    resetUser();
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
     setActivePage('home');
@@ -471,6 +474,13 @@ function App() {
           key={authKey}
           inModal
           onLoginSuccess={(u) => {
+            // Identify user in PostHog
+            identifyUser(u.email, {
+              name: u.name,
+              role: u.role,
+              email: u.email
+            });
+            trackEvent('user_logged_in', { role: u.role, email: u.email });
             setCurrentUser(u);
             setIsAuthOpen(false);
             setActivePage(u.role === 'admin' ? 'dashboard' : 'home');

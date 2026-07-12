@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, MapPin, Phone, Award, CheckCircle, ChevronRight, Mail } from 'lucide-react';
 import { safeParseJson, asArray, saveLocalAndCloud, initializeDb } from '../utils/storage';
 import { getVariant, trackClick, resolveVariantFromUrl, HERO_CTA_TEST, LAYOUT_TEST } from '../utils/abTest';
+import { trackEvent } from '../utils/posthog';
 
 export default function Home({ onNavigate, onRequestQuote }) {
   // Search state
@@ -109,6 +110,13 @@ export default function Home({ onNavigate, onRequestQuote }) {
   const handleCallbackSubmit = (e) => {
     e.preventDefault();
     if (!callbackName || !callbackPhone) return;
+
+    // Track in PostHog
+    trackEvent('lead_form_submitted', {
+      source: layoutVariant === 'B' ? 'layout_b' : 'layout_a',
+      name_length: callbackName.length
+    });
+
     // Save callback inquiry to localStorage for admin dashboard
     const rawInq = safeParseJson(localStorage.getItem('sreeraam_inquiries'), []);
     const inquiries = asArray(rawInq, []);
@@ -153,12 +161,16 @@ export default function Home({ onNavigate, onRequestQuote }) {
   // Video Background Cycler with preloading
   const heroVideos = ['/videos/bg_video1.mp4', '/videos/bg_video2.mp4'];
   const [videoIndex, setVideoIndex] = useState(0);
-  const [videoReady, setVideoReady] = useState(false);
+  // Track which videos have buffered enough to show (by index)
+  const [readyVideos, setReadyVideos] = useState(new Set());
+
+  const handleVideoCanPlay = (i) => {
+    setReadyVideos(prev => new Set([...prev, i]));
+  };
 
   // Cycle video every 12 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setVideoReady(false);
       setVideoIndex(prev => (prev + 1) % heroVideos.length);
     }, 12000);
     return () => clearInterval(timer);
@@ -639,7 +651,6 @@ export default function Home({ onNavigate, onRequestQuote }) {
       >
         {/* Video Background — preload both, show active one when ready */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, overflow: 'hidden' }}>
-          {/* Preload hidden: next video buffers in background */}
           {heroVideos.map((src, i) => (
             <video
               key={src}
@@ -649,7 +660,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
               playsInline
               loop
               autoPlay={i === videoIndex}
-              onCanPlay={() => { if (i === videoIndex) setVideoReady(true); }}
+              onCanPlay={() => handleVideoCanPlay(i)}
               style={{
                 position: 'absolute',
                 top: 0, left: 0,
@@ -657,7 +668,7 @@ export default function Home({ onNavigate, onRequestQuote }) {
                 height: '100%',
                 objectFit: 'cover',
                 objectPosition: 'center',
-                opacity: i === videoIndex && videoReady ? 0.55 : 0,
+                opacity: i === videoIndex && readyVideos.has(i) ? 0.55 : 0,
                 transition: 'opacity 1.5s ease-in-out',
                 pointerEvents: 'none'
               }}

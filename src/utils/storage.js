@@ -58,6 +58,18 @@ function toDbRow(key, item) {
   // Strip frontend-only temporary UI states
   delete row.typeField;
 
+  // Ensure required fields for registered_users table
+  if (key === 'registeredUsers') {
+    // Generate a unique id if not present (Postgres expects non-null id)
+    if (!row.id) {
+      row.id = Date.now() + ((row.email) ? row.email.length : 0);
+    }
+    // Default role to 'client' if not set
+    if (!row.role) {
+      row.role = 'client';
+    }
+  }
+
   if ('desc' in row) {
     row.description = row.desc;
     delete row.desc;
@@ -88,6 +100,11 @@ function fromDbRow(key, row) {
   if ('description' in item) {
     item.desc = item.description;
     delete item.description;
+  }
+
+  if (key === 'registeredUsers') {
+    // Ensure role is preserved when syncing from cloud
+    if (!item.role) item.role = 'client';
   }
 
   if (key === 'sreeraam_chat_messages') {

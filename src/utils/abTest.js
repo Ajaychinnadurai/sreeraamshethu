@@ -1,19 +1,38 @@
 /**
  * A/B Testing Utility
  * Assigns users to variants, tracks clicks, and reports results.
+ * Supports both PostHog (primary) and localStorage (fallback) persistence.
  * All data persisted in localStorage for cross-session tracking.
  */
+
+import { getFeatureFlag, trackEvent, isPostHogReady, EXPERIMENT_FLAGS } from './posthog';
 
 const STORAGE_PREFIX = 'sreeraam_abtest_';
 
 /**
  * Get or assign a variant for a test.
+ * Checks PostHog feature flags first (professional A/B), falls back to localStorage.
  * @param {string} testName - Unique test identifier (e.g. 'hero_cta_text')
  * @param {string[]} variants - Array of variant strings (e.g. ['A', 'B'])
  * @param {number[]} [weights] - Optional distribution weights (must sum to 1, default: equal)
  * @returns {{ variant: string, isNew: boolean }} The assigned variant and whether it's a new assignment
  */
 export function getVariant(testName, variants = ['A', 'B'], weights = null) {
+  // 1. Try PostHog feature flag first (professional A/B testing)
+  if (isPostHogReady()) {
+    const posthogFlagKey = EXPERIMENT_FLAGS[testName];
+
+    if (posthogFlagKey) {
+      const phVariant = getFeatureFlag(posthogFlagKey);
+      if (phVariant && variants.includes(phVariant)) {
+        // Also mirror to localStorage so our helper functions work
+        localStorage.setItem(`${STORAGE_PREFIX}${testName}_variant`, phVariant);
+        return { variant: phVariant, isNew: false };
+      }
+    }
+  }
+
+  // 2. Fall back to localStorage-based assignment
   const storageKey = `${STORAGE_PREFIX}${testName}_variant`;
   const existing = localStorage.getItem(storageKey);
 
@@ -53,11 +72,22 @@ export function getVariant(testName, variants = ['A', 'B'], weights = null) {
 
 /**
  * Track a click event for a test variant.
+ * Sends to PostHog AND localStorage for dual persistence.
  * @param {string} testName - Unique test identifier
  * @param {string} variant - The variant that was clicked
  * @param {object} [metadata] - Optional additional data (timestamp, page, etc.)
  */
 export function trackClick(testName, variant, metadata = {}) {
+  const eventName = `ab_test_click_${testName}`;
+
+  // Track in PostHog (professional analytics)
+  trackEvent(eventName, {
+    test_name: testName,
+    variant,
+    ...metadata
+  });
+
+  // Also track in localStorage (backup)
   const clicksKey = `${STORAGE_PREFIX}${testName}_clicks`;
   const clicks = getClicks(testName);
 
@@ -143,10 +173,6 @@ export function getTestSummary(testName) {
   const clicks = getClicks(testName);
   const events = getEvents(testName);
 
-  // Count total unique users assigned
-  const totalUsers = variant ? 1 : 0; // This user only knows their own assignment
-  // For a complete picture, we'd need a server, but we can show what we know
-
   const totalClicks = Object.values(clicks).reduce((sum, count) => sum + count, 0);
 
   return {
@@ -161,6 +187,7 @@ export function getTestSummary(testName) {
 
 /**
  * Log A/B test results to browser console for quick debugging.
+ * Includes PostHog status info.
  * @param {string} testName - Unique test identifier
  */
 export function logResults(testName) {
@@ -169,6 +196,7 @@ export function logResults(testName) {
   console.log(`  Your variant: ${summary.yourVariant}`);
   console.log(`  Clicks per variant:`, summary.clicksPerVariant);
   console.log(`  Total clicks: ${summary.totalClicks}`);
+  console.log(`  PostHog: ${isPostHogReady() ? '✅ Active' : '❌ Not configured (using localStorage)'}`);
   if (summary.recentEvents.length > 0) {
     console.log(`  Recent events:`, summary.recentEvents);
   }
@@ -232,7 +260,8 @@ export function registerAbTestDebugShortcut() {
         msg += `── ${name} ──\n`;
         msg += `Your variant: ${s.yourVariant}\n`;
         msg += `Clicks: ${JSON.stringify(s.clicksPerVariant)}\n`;
-        msg += `Total: ${s.totalClicks}\n\n`;
+        msg += `Total clicks: ${s.totalClicks}\n`;
+        msg += `PostHog: ${isPostHogReady() ? '✅' : '❌'}\n\n`;
         logResults(name);
       });
       alert(msg);
