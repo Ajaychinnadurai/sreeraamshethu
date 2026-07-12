@@ -8,6 +8,7 @@ import ClayButton from './components/ClayButton';
 import { safeParseJson, asArray, saveLocalAndCloud, startDbSync, initializeDb, supabase, generateUniqueId } from './utils/storage';
 import { playNotificationSound } from './utils/sound';
 import ToastNotification from './components/ToastNotification';
+import SyncStatusBar from './components/SyncStatusBar';
 import QuickReplyBar from './components/QuickReplyBar';
 import ChatAttachment from './components/ChatAttachment';
 import { formatMessageText, renderFormattedParts } from './utils/chatUtils.jsx';
@@ -689,6 +690,9 @@ function App() {
         dismissClientNotification={dismissClientNotification}
         adminUnreadMessagesCount={adminUnreadMessagesCount}
       />
+
+      {/* Sync status bar — shows retry queue and offline status */}
+      <SyncStatusBar />
 
       {/* 2. Main Page Render with Animated Page Transitions */}
       <main style={{ flexGrow: 1, position: 'relative' }}>

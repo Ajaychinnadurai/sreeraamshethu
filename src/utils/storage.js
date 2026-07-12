@@ -1,5 +1,6 @@
 // Build: 2026-07-12 — Force fresh Vercel build to pick up Supabase env vars
 import { createClient } from '@supabase/supabase-js';
+import { enqueueRetry, getPendingItems, dequeueItem } from './syncQueue';
 
 // ── Collision-Free ID Generator ──
 // Avoids Date.now() + Math.random() which creates floats that collide after Math.floor().
@@ -189,43 +190,62 @@ function fromDbRow(key, row) {
 }
 
 // Write locally, then push to Supabase (best-effort, never blocks the app)
+// Returns a Promise for callers who want to track completion (e.g., retryAll).
+// Fire-and-forget callers can safely ignore the returned promise.
 export function saveLocalAndCloud(key, data) {
   // Always save locally first — the app works without Supabase
   localStorage.setItem(key, JSON.stringify(data));
   window.dispatchEvent(new CustomEvent('sreeraam_db_update', { detail: { key, data } }));
 
-  if (!supabase) return;
+  if (!supabase) return Promise.resolve();
 
   const config = getTableConfig(key);
-  if (!config) return;
+  if (!config) return Promise.resolve();
 
   const { table, type, filter } = config;
 
-  // Fire-and-forget: Supabase sync is best-effort, never blocks the UI
-  (async () => {
+  // Return the promise so callers like retryAll can await it
+  const promise = (async () => {
     try {
-      if (data.length > 0) {
-        const rowsToUpsert = data.map(item => {
-          let r = toDbRow(key, item);
-          if (type === 'filtered') r = { ...r, ...filter };
-          return r;
-        });
+      if (data.length === 0) return;
 
-        // Use upsert instead of delete+insert — merges on id conflict,
-        // avoids RLS delete permission issues and race conditions
-        const { error } = await supabase
-          .from(table)
-          .upsert(rowsToUpsert, { onConflict: 'id', ignoreDuplicates: false });
+      const rowsToUpsert = data.map(item => {
+        let r = toDbRow(key, item);
+        if (type === 'filtered') r = { ...r, ...filter };
+        return r;
+      });
 
-        if (error) {
-          console.warn(`[storage.js] Supabase sync skipped for "${key}": ${error.message || '(see error object)'}`, error);
-          // Not a critical error — data is safely stored in localStorage
-        }
+      const { error } = await supabase
+        .from(table)
+        .upsert(rowsToUpsert, { onConflict: 'id', ignoreDuplicates: false });
+
+      if (error) {
+        const msg = error.message || 'Supabase sync failed';
+        console.warn(`[storage.js] Supabase sync skipped for "${key}": ${msg}`, error);
+        enqueueRetry(key, data, msg);
+        throw error;
       }
+
+      // Success — remove any pending retry for this key
+      const pending = getPendingItems();
+      const match = pending.find(p => p.key === key);
+      if (match) dequeueItem(match.id);
+
     } catch (err) {
-      console.warn(`[storage.js] Supabase sync exception for "${key}":`, err);
+      // Network errors and other exceptions not already handled above
+      if (!err || !err.message) throw err;
+      const isSupabaseError = err && err.code && err.details !== undefined;
+      if (!isSupabaseError) {
+        // Only enqueue and warn for non-Supabase errors (network, etc.)
+        // Supabase errors are already enqueued in the if-block above
+        console.warn(`[storage.js] Supabase sync exception for "${key}":`, err.message || err);
+        enqueueRetry(key, data, err.message || 'Network error');
+      }
+      throw err; // Re-throw so callers like retryAll can catch it
     }
   })();
+
+  return promise;
 }
 
 // Sync from Supabase to local storage
