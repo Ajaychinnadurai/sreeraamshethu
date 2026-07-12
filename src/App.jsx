@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, Edit3, Trash2, Mail as MailIcon, Users as UsersIcon } from 'lucide-react';
+import { Send, Check, MessageCircle, CheckCircle, FileText, Clock, Bell, Paperclip, X as XIcon, Mail as MailIcon, Users as UsersIcon, Edit3, Trash2 } from 'lucide-react';
 import ClayNavbar from './components/ClayNavbar';
 import Footer from './components/Footer';
 import ClayModal from './components/ClayModal';
@@ -199,6 +199,27 @@ function App() {
     const isTyping = clientNewMsg.trim().length > 0;
     sendTypingStatus(isTyping);
   }, [clientNewMsg, currentUser]);
+  // Play notification sound on new incoming chat messages
+  const prevLastMsgId = useRef(0);
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const msgs = currentUser.role === 'admin' ? allMessages : clientMessages;
+    if (msgs.length === 0) {
+      prevLastMsgId.current = 0;
+      return;
+    }
+    
+    const lastMsg = msgs[msgs.length - 1];
+    const otherSender = currentUser.role === 'admin' ? 'client' : 'admin';
+    
+    if (prevLastMsgId.current > 0 && lastMsg.id > prevLastMsgId.current && lastMsg.sender === otherSender) {
+      playNotificationSound();
+    }
+    
+    prevLastMsgId.current = lastMsg.id;
+  }, [allMessages, clientMessages, currentUser]);
+
   const adminChatContainerRef = useRef(null);
   const clientChatContainerRef = useRef(null);
 
@@ -927,6 +948,8 @@ function App() {
                             currentThread.messages.map((m, i) => {
                               const isAdmin = m.sender === 'admin';
                               const formattedParts = !isAdmin ? formatMessageText(m.text) : m.text;
+                              const canEdit = isAdmin && isWithinEditWindow(m.id);
+                              const isEditing = editingMessageId === m.id;
                               return (
                                 <div
                                   key={i}
@@ -945,50 +968,115 @@ function App() {
                                   }}
                                  interviewer-comment="nice chat balloon shapes"
                                 >
-                                  <div>
-                                    {!isAdmin
-                                      ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
-                                      : m.text
-                                    }
-                                  </div>
+                                  {m.deleted ? (
+                                    <div style={{ fontStyle: 'italic', opacity: 0.5, fontSize: '11px' }}>
+                                      This message was deleted
+                                    </div>
+                                  ) : isEditing ? (
+                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                      <input
+                                        type="text"
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                        className="vgn-input"
+                                        autoFocus
+                                        style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', flex: 1 }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleEditMessage(m.id, editText);
+                                          if (e.key === 'Escape') { setEditingMessageId(null); setEditText(''); }
+                                        }}
+                                      />
+                                      <button
+                                        onClick={() => handleEditMessage(m.id, editText)}
+                                        className="btn-vgn btn-vgn-gold"
+                                        style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '6px' }}
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditingMessageId(null); setEditText(''); }}
+                                        style={{ background: 'none', border: 'none', fontSize: '10px', color: isAdmin ? 'rgba(255,255,255,0.6)' : 'var(--gray-400)', cursor: 'pointer', padding: '4px' }}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div>
+                                        {!isAdmin
+                                          ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
+                                          : m.text
+                                        }
+                                        {m.edited && (
+                                          <span style={{ fontSize: '9px', opacity: 0.5, marginLeft: '4px' }}>(edited)</span>
+                                        )}
+                                      </div>
 
-                                  {/* Attachment display */}
-                                  {m.attachment && (
-                                    <div style={{ marginTop: '8px' }}>
-                                      {m.attachment.isImage ? (
-                                        <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                                          <img
-                                            src={m.attachment.dataUrl}
-                                            alt={m.attachment.name}
-                                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
-                                          />
-                                          <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
-                                            {m.attachment.name}
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '6px',
-                                          padding: '6px 10px',
-                                          background: isAdmin ? 'rgba(255,255,255,0.1)' : 'var(--bg-light)',
-                                          borderRadius: '6px',
-                                          fontSize: '11px'
-                                        }}>
-                                          <span>📄</span>
-                                          <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                      {/* Attachment display */}
+                                      {m.attachment && (
+                                        <div style={{ marginTop: '8px' }}>
+                                          {m.attachment.isImage ? (
+                                            <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                                              <img
+                                                src={m.attachment.dataUrl}
+                                                alt={m.attachment.name}
+                                                style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
+                                              />
+                                              <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
+                                                {m.attachment.name}
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '6px',
+                                              padding: '6px 10px',
+                                              background: isAdmin ? 'rgba(255,255,255,0.1)' : 'var(--bg-light)',
+                                              borderRadius: '6px',
+                                              fontSize: '11px'
+                                            }}>
+                                              <span>📄</span>
+                                              <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       )}
-                                    </div>
-                                  )}
 
-                                  {/* Reactions */}
-                                  <MessageReactions
-                                    reactions={m.reactions}
-                                    currentUserEmail={currentUser?.email}
-                                    onReact={(emoji) => handleToggleReaction(m.id, emoji)}
-                                  />
+                                      {/* Actions: edit/delete for own messages within window */}
+                                      {canEdit && !m.deleted && (
+                                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                                          <button
+                                            onClick={() => { setEditingMessageId(m.id); setEditText(m.text); }}
+                                            title="Edit message"
+                                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
+                                            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                                          >
+                                            <Edit3 size={11} /> Edit
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteMessage(m.id)}
+                                            title="Delete message"
+                                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                            onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                                            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                                          >
+                                            <Trash2 size={11} /> Delete
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {/* Reactions */}
+                                      {!m.deleted && (
+                                        <MessageReactions
+                                          reactions={m.reactions}
+                                          currentUserEmail={currentUser?.email}
+                                          onReact={(emoji) => handleToggleReaction(m.id, emoji)}
+                                        />
+                                      )}
+                                    </>
+                                  )}
 
                                   <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                     {isAdmin ? 'You • ' : `${currentThread.clientName} • `} {m.time}
@@ -1041,6 +1129,8 @@ function App() {
                           clientMessages.map((m, i) => {
                             const isAdminReply = m.sender === 'admin';
                             const formattedParts = isAdminReply ? formatMessageText(m.text) : m.text;
+                            const canEdit = !isAdminReply && isWithinEditWindow(m.id);
+                            const isEditing = editingMessageId === m.id;
                             return (
                               <div
                                 key={i}
@@ -1058,51 +1148,116 @@ function App() {
                                   lineHeight: '1.4'
                                 }}
                               >
-                                {/* Message text with rich formatting */}
-                                <div>
-                                  {isAdminReply
-                                    ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
-                                    : m.text
-                                  }
-                                </div>
+                                {m.deleted ? (
+                                  <div style={{ fontStyle: 'italic', opacity: 0.5, fontSize: '11px' }}>
+                                    This message was deleted
+                                  </div>
+                                ) : isEditing ? (
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <input
+                                      type="text"
+                                      value={editText}
+                                      onChange={(e) => setEditText(e.target.value)}
+                                      className="vgn-input"
+                                      autoFocus
+                                      style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', flex: 1 }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleEditMessage(m.id, editText);
+                                        if (e.key === 'Escape') { setEditingMessageId(null); setEditText(''); }
+                                      }}
+                                    />
+                                    <button
+                                      onClick={() => handleEditMessage(m.id, editText)}
+                                      className="btn-vgn btn-vgn-gold"
+                                      style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '6px' }}
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => { setEditingMessageId(null); setEditText(''); }}
+                                      style={{ background: 'none', border: 'none', fontSize: '10px', color: 'var(--gray-400)', cursor: 'pointer', padding: '4px' }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* Message text with rich formatting */}
+                                    <div>
+                                      {isAdminReply
+                                        ? renderFormattedParts(formattedParts, { linkColor: 'var(--vgn-blue-dark)' })
+                                        : m.text
+                                      }
+                                      {m.edited && (
+                                        <span style={{ fontSize: '9px', opacity: 0.5, marginLeft: '4px' }}>(edited)</span>
+                                      )}
+                                    </div>
 
-                                {/* Attachment display */}
-                                {m.attachment && (
-                                  <div style={{ marginTop: '8px' }}>
-                                    {m.attachment.isImage ? (
-                                      <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                                        <img
-                                          src={m.attachment.dataUrl}
-                                          alt={m.attachment.name}
-                                          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
-                                        />
-                                        <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
-                                          {m.attachment.name}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '6px 10px',
-                                        background: isAdminReply ? 'var(--bg-light)' : 'rgba(255,255,255,0.1)',
-                                        borderRadius: '6px',
-                                        fontSize: '11px'
-                                      }}>
-                                        <span>📄</span>
-                                        <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                    {/* Attachment display */}
+                                    {m.attachment && (
+                                      <div style={{ marginTop: '8px' }}>
+                                        {m.attachment.isImage ? (
+                                          <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                                            <img
+                                              src={m.attachment.dataUrl}
+                                              alt={m.attachment.name}
+                                              style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block' }}
+                                            />
+                                            <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px' }}>
+                                              {m.attachment.name}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '6px 10px',
+                                            background: isAdminReply ? 'var(--bg-light)' : 'rgba(255,255,255,0.1)',
+                                            borderRadius: '6px',
+                                            fontSize: '11px'
+                                          }}>
+                                            <span>📄</span>
+                                            <span style={{ fontWeight: '600' }}>{m.attachment.name}</span>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
-                                  </div>
-                                )}
 
-                                {/* Reactions */}
-                                <MessageReactions
-                                  reactions={m.reactions}
-                                  currentUserEmail={currentUser?.email}
-                                  onReact={(emoji) => handleToggleReaction(m.id, emoji)}
-                                />
+                                    {/* Actions: edit/delete for own messages within window */}
+                                    {canEdit && !m.deleted && (
+                                      <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                                        <button
+                                          onClick={() => { setEditingMessageId(m.id); setEditText(m.text); }}
+                                          title="Edit message"
+                                          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                          onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
+                                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                                        >
+                                          <Edit3 size={11} /> Edit
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteMessage(m.id)}
+                                          title="Delete message"
+                                          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                          onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                                        >
+                                          <Trash2 size={11} /> Delete
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {/* Reactions */}
+                                    {!m.deleted && (
+                                      <MessageReactions
+                                        reactions={m.reactions}
+                                        currentUserEmail={currentUser?.email}
+                                        onReact={(emoji) => handleToggleReaction(m.id, emoji)}
+                                      />
+                                    )}
+                                  </>
+                                )}
 
                                 <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                   {isAdminReply ? 'Sethu Pandian B.E. (Admin) • ' : 'You • '} {m.time}

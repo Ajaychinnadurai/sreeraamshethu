@@ -104,3 +104,10 @@ Port 5176 is in use, trying another one...
 [2m15:55:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
 [2m15:58:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
 [2m16:18:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m16:21:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/Sectors.jsx, /src/components/ClayNavbar.jsx, /src/pages/Projects.jsx, /src/pages/About.jsx, /src/pages/Auth.jsx, /src/pages/Home.jsx, /src/pages/Contact.jsx, /src/pages/Careers.jsx, /src/pages/DashboardAdmin.jsx[22m
+[2m16:22:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m16:22:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m16:22:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m16:22:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m16:23:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/pages/Sectors.jsx, /src/components/ClayNavbar.jsx, /src/pages/Projects.jsx, /src/pages/About.jsx, /src/pages/Auth.jsx, /src/pages/Home.jsx, /src/pages/Contact.jsx, /src/pages/Careers.jsx, /src/pages/DashboardAdmin.jsx[22m
+[2m16:23:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx[22m

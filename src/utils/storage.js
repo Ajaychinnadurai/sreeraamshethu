@@ -219,6 +219,12 @@ export async function syncKeyFromCloud(key, fallback = []) {
     return asArray(safeParseJson(localStorage.getItem(key), fallback), fallback);
   }
 
+  // Check backoff before attempting
+  if (!connectionHealth.canTry()) {
+    // Silently skip — we're still backing off after previous failures
+    return asArray(safeParseJson(localStorage.getItem(key), fallback), fallback);
+  }
+
   try {
     const config = getTableConfig(key);
     if (config) {
@@ -229,6 +235,8 @@ export async function syncKeyFromCloud(key, fallback = []) {
       }
       const { data: rows, error } = await query.order('id', { ascending: true });
       if (!error && rows) {
+        // Success — reset health tracker
+        connectionHealth.ok();
         const cloudData = rows.map(r => fromDbRow(key, r));
         const localRaw = localStorage.getItem(key);
         if (localRaw !== JSON.stringify(cloudData)) {
@@ -237,11 +245,22 @@ export async function syncKeyFromCloud(key, fallback = []) {
         }
         return cloudData;
       } else if (error) {
-        console.error(`[storage.js] syncKeyFromCloud error for "${key}":`, error);
+        // Transient network/db error — don't spam the console
+        connectionHealth.fail();
+        if (connectionHealth.failures <= 3) {
+          console.warn(`[storage.js] syncKeyFromCloud failed for "${key}" (attempt ${connectionHealth.failures}):`, error.message || error);
+        } else if (connectionHealth.failures === 4) {
+          console.warn(`[storage.js] syncKeyFromCloud: Supabase unreachable after ${connectionHealth.failures} attempts. Suppressing further logs until connection recovers.`);
+        }
       }
     }
   } catch (err) {
-    console.error(`[storage.js] syncKeyFromCloud exception for "${key}":`, err);
+    connectionHealth.fail();
+    if (connectionHealth.failures <= 3) {
+      console.warn(`[storage.js] syncKeyFromCloud connection error for "${key}" (attempt ${connectionHealth.failures}):`, err.message || err);
+    } else if (connectionHealth.failures === 4) {
+      console.warn(`[storage.js] syncKeyFromCloud: Connection lost. Suppressing further logs.`);
+    }
   }
 
   return asArray(safeParseJson(localStorage.getItem(key), fallback), fallback);
@@ -333,15 +352,57 @@ export async function initializeDb(key, defaults = []) {
   }
 }
 
+// ── Connection Health Tracker with Adaptive Backoff ──
+const connectionHealth = {
+  failures: 0,
+  lastFailureAt: 0,
+  maxBackoffMs: 120_000,       // 2 min cap
+  initialBackoffMs: 2_000,      // 2s start
+
+  // Whether enough time has elapsed since last failure to try again
+  canTry() {
+    if (this.failures === 0) return true;
+    const elapsed = Date.now() - this.lastFailureAt;
+    const backoff = Math.min(
+      this.initialBackoffMs * Math.pow(2, this.failures - 1),
+      this.maxBackoffMs
+    );
+    return elapsed >= backoff;
+  },
+
+  fail() {
+    this.failures++;
+    this.lastFailureAt = Date.now();
+  },
+
+  ok() {
+    this.failures = 0;
+  },
+
+  // Reset after prolonged success — drop the accumulated failure count
+  reset() {
+    this.failures = 0;
+  }
+};
+
 // Start continuous sync loop
 let syncInterval = null;
 export function startDbSync(keys = []) {
   if (syncInterval) clearInterval(syncInterval);
 
   const performSync = () => {
-    keys.forEach(key => { syncKeyFromCloud(key); });
+    // Skip the poll if the health tracker says we're still backing off
+    if (!connectionHealth.canTry()) return;
+
+    keys.forEach(async (key) => {
+      const result = await syncKeyFromCloud(key);
+      if (result === null) {
+        // syncKeyFromCloud already handles its own logging
+      }
+    });
   };
 
+  // Initial sync (best-effort, won't block startup)
   performSync();
 
   // Listen to live database changes for instant sync
@@ -350,13 +411,14 @@ export function startDbSync(keys = []) {
     dbChannel = supabase
       .channel('db-sync-changes')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        performSync();
+        // Realtime event → immediate sync (skip backoff for realtime events)
+        keys.forEach(key => { syncKeyFromCloud(key); });
       })
       .subscribe();
   }
 
-  // Poll every 5 seconds as a robust fallback
-  syncInterval = setInterval(performSync, 5000);
+  // Poll every 30 seconds as a robust fallback (reduced from 5s to avoid HTTP/2 connection churn)
+  syncInterval = setInterval(performSync, 30_000);
   
   return () => {
     clearInterval(syncInterval);
