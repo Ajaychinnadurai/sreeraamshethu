@@ -3,14 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 
 // ── Collision-Free ID Generator ──
 // Avoids Date.now() + Math.random() which creates floats that collide after Math.floor().
-// Uses a monotonic counter to guarantee unique integer IDs even within the same millisecond.
+// Stays within JavaScript's safe integer range (Number.MAX_SAFE_INTEGER ≈ 9e15).
+// Date.now() * 1000 ≈ 1.78e15 (16 digits), safely under 9e15.
+// Adding a small counter guarantees uniqueness within the same millisecond.
+// On page reload, Date.now() advances, so cross-session collisions are impossible.
 let _idCounter = 0;
-const _idBase = Date.now();
 export function generateUniqueId() {
-  _idCounter++;
-  // Combine base timestamp with counter, staying within JS safe integer range.
-  // Base is ~13 digits, counter adds ~4-6 digits. Result is always unique.
-  return Number(`${_idBase}${String(_idCounter).padStart(5, '0')}`);
+  _idCounter = (_idCounter + 1) % 1000;
+  return Date.now() * 1000 + _idCounter;
 }
 
 export function safeParseJson(value, fallback = null) {
